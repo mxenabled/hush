@@ -13,6 +13,9 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         populateUnneededSuppressions()
     }
 
+    /**
+     * Re-initialize. Used primarily when a re-evaluation of suppressions is necessary.
+     */
     fun reInitialize(suppressions: List<HushSuppression>) {
         neededSuppressions = mutableListOf()
         unneededSuppressions = mutableListOf()
@@ -21,6 +24,11 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         populateUnneededSuppressions()
     }
 
+    /**
+     * Throw an error if validation fails.
+     * Will throw if non-suppressed vulnerabilities are found.
+     * MAY throw if unnecessary suppressions are found (as per run parameter failOnUnneeded)
+     */
     fun passOrFail(failOnUnneeded: Boolean) {
         if (failOnUnneeded && neededSuppressions.isNotEmpty() && neededSuppressions.isNotEmpty()) {
             throw HushValidationViolation(red("Vulnerabilities and unneeded suppressions detected. Please see report for details."))
@@ -35,6 +43,11 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         }
     }
 
+    /**
+     * Print report based on validation
+     * Will print non-suppressed vulnerabilities
+     * MAY print unnecessary suppressions (as per run parameter outputUnneeded)
+     */
     fun printReport(outputUnneeded: Boolean, outputSuggested: Boolean) {
         if (neededSuppressions.isNotEmpty()) {
             val vulnVerbiage = if (neededSuppressions.size > 1) "vulnerabilities" else "vulnerability"
@@ -70,6 +83,9 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         println(green("Project passed validation."))
     }
 
+    /**
+     * Write suggested suppressions to suppression file.
+     */
     fun outputSuggestedSuppressions() {
         val suggested = getSuggestedSuppressionText()
 

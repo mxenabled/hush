@@ -8,9 +8,13 @@ import org.gradle.api.Project
 
 class HushEngine(private val project: Project, private val driver: HushDriver) {
     private val configParameters = hashMapOf(
+        // Output unneeded suppressions
         "outputUnneeded" to true,
+        // Throw if unneeded suppressions are found
         "failOnUnneeded" to true,
+        // Output suggested suppressions
         "outputSuggested" to true,
+        // Write the suggested suppressions to the suppression file
         "writeSuggested" to false,
     )
 

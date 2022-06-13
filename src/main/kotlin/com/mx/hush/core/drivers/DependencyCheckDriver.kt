@@ -13,7 +13,15 @@ import java.util.*
 import javax.xml.bind.JAXBContext
 import kotlin.collections.HashMap
 
+/**
+ * Driver for leveraging the dependencyCheckAnalyze plugin
+ */
 class DependencyCheckDriver(private val project: Project) : HushDriver(project) {
+    /**
+     * Initialize the dependencyCheck extension, and the dependencyCheckAnalyze task. Configure for JSON output,
+     * without suppressions. Configure Hush to run after this task is complete, so it can analyze vulnerabilities
+     * and suppressions.
+     */
     override fun setupProject() {
         var dependencyCheckExtension = project.extensions.create("dependencyCheck", DependencyCheckExtension::class.java)
         project.tasks.register("dependencyCheckAnalyze", Analyze::class.java)
@@ -37,6 +45,9 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
         }
     }
 
+    /**
+     * Get vulnerabilities from the dependencyCheckAnalyze tasks's output file and map to HushVaulnerability
+     */
     override fun getVulnerabilities(): HashMap<String, HushVulnerability> {
         val scanReport = getReport()
         val vulnerabilities = HashMap<String, HushVulnerability>()
@@ -49,6 +60,9 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
         return vulnerabilities
     }
 
+    /**
+     * Get the suppressions as per dependencyCheckAnalyze task's expectations
+     */
     override fun getSuppressions(): List<HushSuppression>? {
         if (!File("./dependency_suppression.xml").exists()) {
             return null
@@ -72,6 +86,9 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
         return Collections.unmodifiableList(suppressList)
     }
 
+    /**
+     * Generate XML from suggested suppressions, as per the dependencyCheckAnalyze task's expectations
+     */
     override fun getSuggestedSuppressionText(suppressions: List<HushSuppression>): String {
         val suggested = DependencyCheckScanSuppressions()
 
@@ -95,7 +112,10 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
         return stringWriter.toString()
     }
 
-    override fun outputSuggestedSuppressions(suppressions: String) {
+    /**
+     * Write the suggested suppressions to dependency_suppression.xml, which dependencyCheckAnalyze expects
+     */
+    override fun writeSuggestedSuppressions(suppressions: String) {
         File("./dependency_suppression.xml").writeText(suppressions)
     }
 
