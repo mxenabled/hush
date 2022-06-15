@@ -26,7 +26,7 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
         var dependencyCheckExtension = project.extensions.create("dependencyCheck", DependencyCheckExtension::class.java)
         project.tasks.register("dependencyCheckAnalyze", Analyze::class.java)
 
-        dependencyCheckExtension.data.directory = ".dependency-check-data"
+        dependencyCheckExtension.data.directory = "${project.projectDir}/.dependency-check-data"
         dependencyCheckExtension.cveValidForHours = 24
         dependencyCheckExtension.failBuildOnCVSS = 11F
         dependencyCheckExtension.format = ReportGenerator.Format.JSON
@@ -35,7 +35,7 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
             Arrays.asList("checkstyle", "detekt", "detektPlugins",
             "pmd", "spotbugs", "spotbugsPlugins", "spotbugsSlf4j"))
         dependencyCheckExtension.suppressionFile = null
-        dependencyCheckExtension.outputDirectory = "./build/reports/hush/report.json"
+        dependencyCheckExtension.outputDirectory = "${project.buildDir}/reports/hush/report.json"
         dependencyCheckExtension.showSummary = false
 
         project.afterEvaluate {
@@ -68,7 +68,7 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
             return null
         }
 
-        val xmlContents = readFileDirectlyAsText("./dependency_suppression.xml")
+        val xmlContents = readFileDirectlyAsText("${project.projectDir}/dependency_suppression.xml")
         val jaxbContext = JAXBContext.newInstance(DependencyCheckScanSuppressions::class.java)
         val unmarshaller = jaxbContext.createUnmarshaller()
         val dependencyCheckSuppressions: DependencyCheckScanSuppressions
@@ -120,7 +120,7 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
     }
 
     private fun getReport(): DependencyCheckScanReport {
-        return Gson().fromJson(readFileDirectlyAsText("./build/reports/hush/report.json"), DependencyCheckScanReport::class.java)
+        return Gson().fromJson(readFileDirectlyAsText("${project.buildDir}/reports/hush/report.json"), DependencyCheckScanReport::class.java)
     }
 
     private fun readFileDirectlyAsText(fileName: String): String
