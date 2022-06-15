@@ -22,10 +22,11 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
     private var extension: HushExtension = project.extensions.create("hush", HushExtension::class.java)
 
     init {
-        println("Output Unneeded: ${extension.outputUnneeded}")
+        project.afterEvaluate {
+            initializeConfigParameters()
+        }
 
         setupProject()
-        initializeConfigParameters()
     }
 
     fun analyze() {
@@ -55,6 +56,11 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
     }
 
     private fun initializeConfigParameters() {
+        configParameters["outputUnneeded"] = extension.outputUnneeded
+        configParameters["failOnUnneeded"] = extension.failOnUnneeded
+        configParameters["outputSuggested"] = extension.outputSuggested
+        configParameters["writeSuggested"] = extension.writeSuggested
+
         for (configItem in configParameters.keys) {
             for (parameter in project.properties) {
                 val key = parameter.key.toLowerCase()
@@ -62,13 +68,13 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
                 if (key == configItem.toLowerCase()) {
                     configParameters[configItem] = true
 
-                    println("$configItem enabled")
+                    println("$configItem enabled via parameter")
                 }
 
                 if (key == "no${configItem.toLowerCase()}") {
                     configParameters[configItem] = false
 
-                    println("$configItem disabled")
+                    println("$configItem disabled via parameter")
                 }
             }
         }
