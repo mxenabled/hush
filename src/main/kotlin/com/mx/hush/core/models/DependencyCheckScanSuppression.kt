@@ -4,17 +4,20 @@ import javax.xml.bind.annotation.*
 
 @XmlRootElement(name = "suppress")
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "", propOrder = ["notes", "packageUrl", "cpe", "cve"])
-class DependencyCheckScanSuppression {
+@XmlType(name = "", propOrder = ["notes", "cve"])
+class DependencyCheckScanSuppression() {
     @XmlElement(name = "notes", required = false)
-    var notes: String = ""
-
-    @XmlElement(name = "packageUrl", required = false)
-    var packageUrl: String? = null
-
-    @XmlElement(name = "cpe", required = false)
-    var cpe: String? = null
+    var notes: String? = null
 
     @XmlElement(name = "cve", required = false)
     var cve: String? = null
+
+    constructor(notes: String) : this() {
+        this.notes = notes
+    }
+
+    constructor(notes: String, cve: String) : this() {
+        this.notes = notes
+        this.cve = cve
+    }
 }

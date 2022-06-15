@@ -1,0 +1,121 @@
+package com.mx.hush.core.models;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.XmlValue;
+
+
+/**
+ * <p>Java class for regexStringType complex type.
+ * 
+ * <p>The following schema fragment specifies the expected content contained within this class.
+ * 
+ * <pre>
+ * &lt;complexType name="regexStringType">
+ *   &lt;simpleContent>
+ *     &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
+ *       &lt;attribute name="regex" type="{http://www.w3.org/2001/XMLSchema}boolean" default="false" />
+ *       &lt;attribute name="caseSensitive" type="{http://www.w3.org/2001/XMLSchema}boolean" default="false" />
+ *     &lt;/extension>
+ *   &lt;/simpleContent>
+ * &lt;/complexType>
+ * </pre>
+ * 
+ * 
+ */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "regexStringType", propOrder = {
+    "value"
+})
+public class RegexStringType {
+
+    @XmlValue
+    protected String value;
+    @XmlAttribute(name = "regex")
+    protected Boolean regex;
+    @XmlAttribute(name = "caseSensitive")
+    protected Boolean caseSensitive;
+
+    /**
+     * Gets the value of the value property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getValue() {
+        return value;
+    }
+
+    /**
+     * Sets the value of the value property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    /**
+     * Gets the value of the regex property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Boolean }
+     *     
+     */
+    public boolean isRegex() {
+        if (regex == null) {
+            return false;
+        } else {
+            return regex;
+        }
+    }
+
+    /**
+     * Sets the value of the regex property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Boolean }
+     *     
+     */
+    public void setRegex(Boolean value) {
+        this.regex = value;
+    }
+
+    /**
+     * Gets the value of the caseSensitive property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Boolean }
+     *     
+     */
+    public boolean isCaseSensitive() {
+        if (caseSensitive == null) {
+            return false;
+        } else {
+            return caseSensitive;
+        }
+    }
+
+    /**
+     * Sets the value of the caseSensitive property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Boolean }
+     *     
+     */
+    public void setCaseSensitive(Boolean value) {
+        this.caseSensitive = value;
+    }
+
+}

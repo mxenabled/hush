@@ -30,7 +30,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
      * MAY throw if unnecessary suppressions are found (as per run parameter failOnUnneeded)
      */
     fun passOrFail(failOnUnneeded: Boolean) {
-        if (failOnUnneeded && neededSuppressions.isNotEmpty() && neededSuppressions.isNotEmpty()) {
+        if (failOnUnneeded && neededSuppressions.isNotEmpty() && unneededSuppressions.isNotEmpty()) {
             throw HushValidationViolation(red("Vulnerabilities and unneeded suppressions detected. Please see report for details."))
         }
 
@@ -86,10 +86,10 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
     /**
      * Write suggested suppressions to suppression file.
      */
-    fun outputSuggestedSuppressions() {
+    fun writeSuggestedSuppressions() {
         val suggested = getSuggestedSuppressionText()
 
-        driver.outputSuggestedSuppressions(suggested)
+        driver.writeSuggestedSuppressions(suggested)
     }
 
     private fun isSuppressionFileValid(): Boolean {

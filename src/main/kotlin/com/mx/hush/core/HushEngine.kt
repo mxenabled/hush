@@ -1,5 +1,6 @@
 package com.mx.hush.core
 
+import com.mx.hush.HushExtension
 import com.mx.hush.core.drivers.HushDriver
 import com.mx.hush.core.models.HushSuppression
 import com.mx.hush.core.models.HushVulnerability
@@ -18,7 +19,11 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
         "writeSuggested" to false,
     )
 
+    private var extension: HushExtension = project.extensions.create("hush", HushExtension::class.java)
+
     init {
+        println("Output Unneeded: ${extension.outputUnneeded}")
+
         setupProject()
         initializeConfigParameters()
     }
@@ -28,7 +33,7 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
         analyzer.printReport(getConfigParameter("outputUnneeded"), getConfigParameter("outputSuggested"))
 
         if (getConfigParameter("writeSuggested")) {
-            analyzer.outputSuggestedSuppressions()
+            analyzer.writeSuggestedSuppressions()
             analyzer.reInitialize(getSuppressions())
 
             println(green("Suppression file written."))
