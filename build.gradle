@@ -34,6 +34,10 @@ gradlePlugin {
             id = group
             implementationClass = "com.mx.hush.HushPlugin"
         }
+        hushJitPackPlugin {
+            id = "com.github.mxenabled.hush"
+            implementationClass = "com.mx.hush.HushPlugin"
+        }
     }
 }
 
