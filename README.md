@@ -2,6 +2,8 @@
 
 A wrapper for dependency vulnerability plugins which makes it easier to manage suppression files.
 
+Jitpack: https://jitpack.io/p/mxenabled/hush
+
 ## Use
 
 ### Basic Usage
