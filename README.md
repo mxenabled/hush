@@ -52,3 +52,10 @@ hush {
    writeSuggested = false
 }
 ```
+
+### Manually Running Sub-Tasks
+
+Subtasks are given a unique name to prevent name collision. You may run them by prepending `hush`. For example:
+
+   - `./gradlew hushDependencyCheck`
+   - `./gradlew hushDependencyCheckAnalyze`
