@@ -23,10 +23,14 @@ Report.
 
 You may prepend `no` to any of the above flags, and the feature will be disabled (such as `noOutputUnneeded`).
 
+The above flags may also be used in `build.gradle` as config options. See below for examples.
+
 ### Examples
 
 To disable the reporting of unnecessary suppressions and suggestions, and to write directly to the suppression file
 (perhaps in a dev environment), you could run the following:
+
+#### In terminal
 
 ```
 ./gradlew hushReport -PnoOutputUnneeded -PnoOutputSuggested -PwriteSuggested
@@ -34,6 +38,28 @@ To disable the reporting of unnecessary suppressions and suggestions, and to wri
 
 To disable the reporting of suggestions, you could run the following:
 
+#### In terminal
+
 ```
 ./gradlew hushReport -PnoOutputSuggested
 ```
+
+Example configuration with default values:
+
+#### In `build.gradle`
+
+```
+hush {
+   outputUnneeded = true
+   failOnUnneeded = true
+   outputSuggested = true
+   writeSuggested = false
+}
+```
+
+### Manually Running Sub-Tasks
+
+Subtasks are given a unique name to prevent name collision. You may run them by prepending `hush`. For example:
+
+   - `./gradlew hushDependencyCheck`
+   - `./gradlew hushDependencyCheckAnalyze`

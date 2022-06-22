@@ -38,8 +38,8 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
      * and suppressions.
      */
     override fun setupProject() {
-        var dependencyCheckExtension = project.extensions.create("dependencyCheck", DependencyCheckExtension::class.java)
-        project.tasks.register("dependencyCheckAnalyze", Analyze::class.java)
+        var dependencyCheckExtension = project.extensions.create("hushDependencyCheck", DependencyCheckExtension::class.java)
+        project.tasks.register("hushDependencyCheckAnalyze", Analyze::class.java)
 
         dependencyCheckExtension.data.directory = "${project.projectDir}/.dependency-check-data"
         dependencyCheckExtension.cveValidForHours = 24
@@ -56,7 +56,7 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
         project.afterEvaluate {
             project.tasks.named("hushReport")
                 .get()
-                .dependsOn(project.tasks.named("dependencyCheckAnalyze"))
+                .dependsOn(project.tasks.named("hushDependencyCheckAnalyze"))
         }
     }
 
