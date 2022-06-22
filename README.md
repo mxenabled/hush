@@ -23,6 +23,8 @@ Report.
 
 You may prepend `no` to any of the above flags, and the feature will be disabled (such as `noOutputUnneeded`).
 
+The above flags may also be used in `build.gradle` as config options. See below for examples.
+
 ### Examples
 
 To disable the reporting of unnecessary suppressions and suggestions, and to write directly to the suppression file
@@ -36,4 +38,17 @@ To disable the reporting of suggestions, you could run the following:
 
 ```
 ./gradlew hushReport -PnoOutputSuggested
+```
+
+Example configuration with default values:
+
+_In `build.gradle`_
+
+```
+hush {
+   outputUnneeded = true
+   failOnUnneeded = true
+   outputSuggested = true
+   writeSuggested = false
+}
 ```
