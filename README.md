@@ -30,11 +30,15 @@ The above flags may also be used in `build.gradle` as config options. See below 
 To disable the reporting of unnecessary suppressions and suggestions, and to write directly to the suppression file
 (perhaps in a dev environment), you could run the following:
 
+#### In terminal
+
 ```
 ./gradlew hushReport -PnoOutputUnneeded -PnoOutputSuggested -PwriteSuggested
 ```
 
 To disable the reporting of suggestions, you could run the following:
+
+#### In terminal
 
 ```
 ./gradlew hushReport -PnoOutputSuggested
@@ -42,7 +46,7 @@ To disable the reporting of suggestions, you could run the following:
 
 Example configuration with default values:
 
-_In `build.gradle`_
+#### In `build.gradle`
 
 ```
 hush {
