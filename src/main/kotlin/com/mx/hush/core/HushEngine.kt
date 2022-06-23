@@ -46,7 +46,6 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
 
     fun analyze() {
         val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), driver)
-        analyzer.printReport(getConfigParameter("outputUnneeded"), getConfigParameter("outputSuggested"))
 
         if (getConfigParameter("writeSuggested")) {
             analyzer.writeSuggestedSuppressions()
@@ -55,6 +54,7 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
             println(green("Suppression file written."))
         }
 
+        analyzer.printReport(getConfigParameter("outputUnneeded"), getConfigParameter("outputSuggested"))
         analyzer.passOrFail(getConfigParameter("failOnUnneeded"))
     }
 

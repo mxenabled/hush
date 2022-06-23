@@ -23,8 +23,10 @@ import org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension
 import org.owasp.dependencycheck.gradle.tasks.Analyze
 import org.owasp.dependencycheck.reporting.ReportGenerator
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.StringWriter
-import java.util.*
+import java.util.Arrays
+import java.util.Collections
 import javax.xml.bind.JAXBContext
 import kotlin.collections.HashMap
 
@@ -38,34 +40,56 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
      * and suppressions.
      */
     override fun setupProject() {
-        var dependencyCheckExtension = project.extensions.create("hushDependencyCheck", DependencyCheckExtension::class.java)
-        project.tasks.register("hushDependencyCheckAnalyze", Analyze::class.java)
-
-        dependencyCheckExtension.data.directory = "${project.projectDir}/.dependency-check-data"
-        dependencyCheckExtension.cveValidForHours = 24
-        dependencyCheckExtension.failBuildOnCVSS = 11F
-        dependencyCheckExtension.format = ReportGenerator.Format.JSON
-        dependencyCheckExtension.skipConfigurations.clear()
-        dependencyCheckExtension.skipConfigurations.addAll(
-            Arrays.asList("checkstyle", "detekt", "detektPlugins",
-            "pmd", "spotbugs", "spotbugsPlugins", "spotbugsSlf4j"))
-        dependencyCheckExtension.suppressionFile = null
-        dependencyCheckExtension.outputDirectory = "${project.buildDir}/reports/hush/report.json"
-        dependencyCheckExtension.showSummary = false
-
         project.afterEvaluate {
+            // Create new dependencyCheck extension, ignoring errors from the extension already existing
+            try {
+                project.extensions.create("dependencyCheck", DependencyCheckExtension::class.java)
+            } catch (ignored: Exception) {
+
+            }
+
+            // Register the task, ignoring errors from the task already being registered
+            try {
+                project.tasks.register("dependencyCheckAnalyze", Analyze::class.java)
+            } catch (ignored: Exception) {
+
+            }
+
+            // Make sure the extension gets configured just before the dependencyCheckAnalyze task runs
+            project.tasks.named("dependencyCheckAnalyze")
+                .get()
+                .doFirst {
+                    val dependencyCheckExtension = project.extensions.getByName("dependencyCheck") as DependencyCheckExtension
+
+                    dependencyCheckExtension.data.directory = "${project.projectDir}/.dependency-check-data"
+                    dependencyCheckExtension.cveValidForHours = 24
+                    dependencyCheckExtension.failBuildOnCVSS = 11F
+                    dependencyCheckExtension.format = ReportGenerator.Format.JSON
+                    dependencyCheckExtension.skipConfigurations.clear()
+                    dependencyCheckExtension.skipConfigurations.addAll(
+                        Arrays.asList("checkstyle", "detekt", "detektPlugins",
+                            "pmd", "spotbugs", "spotbugsPlugins", "spotbugsSlf4j"))
+                    dependencyCheckExtension.suppressionFile = null
+                    dependencyCheckExtension.outputDirectory = "${project.buildDir}/reports/hush/report.json"
+                    dependencyCheckExtension.showSummary = false
+                }
+
             project.tasks.named("hushReport")
                 .get()
-                .dependsOn(project.tasks.named("hushDependencyCheckAnalyze"))
+                .dependsOn(project.tasks.named("dependencyCheckAnalyze"))
         }
     }
 
     /**
-     * Get vulnerabilities from the dependencyCheckAnalyze tasks's output file and map to HushVaulnerability
+     * Get vulnerabilities from the dependencyCheckAnalyze task's output file and map to HushVulnerability
      */
     override fun getVulnerabilities(): HashMap<String, HushVulnerability> {
         val scanReport = getReport()
         val vulnerabilities = HashMap<String, HushVulnerability>()
+
+        if (scanReport == null) {
+            return vulnerabilities
+        }
 
         for (vulnerability in scanReport.getVulnerabilities()) {
             val mappedVulnerability = HushVulnerability(vulnerability.key, vulnerability.value.description, vulnerability.value.references[0].url)
@@ -134,8 +158,12 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
         File("./dependency_suppression.xml").writeText(suppressions)
     }
 
-    private fun getReport(): DependencyCheckScanReport {
-        return Gson().fromJson(readFileDirectlyAsText("${project.buildDir}/reports/hush/report.json"), DependencyCheckScanReport::class.java)
+    private fun getReport(): DependencyCheckScanReport? {
+        return try {
+            Gson().fromJson(readFileDirectlyAsText("${project.buildDir}/reports/hush/report.json"), DependencyCheckScanReport::class.java)
+        } catch (ignored: FileNotFoundException) {
+            null
+        }
     }
 
     private fun readFileDirectlyAsText(fileName: String): String
