@@ -25,7 +25,8 @@ import org.owasp.dependencycheck.reporting.ReportGenerator
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.StringWriter
-import java.util.*
+import java.util.Arrays
+import java.util.Collections
 import javax.xml.bind.JAXBContext
 import kotlin.collections.HashMap
 
