@@ -77,12 +77,22 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         }
 
         if (unneededSuppressions.isNotEmpty() && outputUnneeded) {
+            val multiWhitespace = Regex("\\s{2,}")
             val supVerbiage = if (unneededSuppressions.size > 1) "suppressions" else "suppression"
 
             println("${yellow(unneededSuppressions.size.toString())} ${red("unnecessary $supVerbiage found!")}")
 
             for (suppression in unneededSuppressions) {
-                println("   - ${suppression.cve}")
+                val notes = suppression.notes
+                    ?.replace("\n", "")
+                    ?.replace(multiWhitespace, " ")
+                    ?.trim()
+
+                if (notes != null) {
+                    println("   - ${suppression.cve} ($notes)")
+                } else {
+                    println("   - ${suppression.cve}")
+                }
             }
 
             println("\n")
