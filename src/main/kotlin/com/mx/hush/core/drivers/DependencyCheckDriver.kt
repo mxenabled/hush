@@ -34,6 +34,13 @@ import kotlin.collections.HashMap
  * Driver for leveraging the dependencyCheckAnalyze plugin
  */
 class DependencyCheckDriver(private val project: Project) : HushDriver(project) {
+
+    /**
+     * Resource directory paths used for dependency analysis. Create, Read, Write.
+     */
+    private var reportFilepath: String = "${project.projectDir}/reports/hush/report.json"
+    private var suppressionFilepath: String = "${project.projectDir}/dependency_suppression.xml"
+
     /**
      * Initialize the dependencyCheck extension, and the dependencyCheckAnalyze task. Configure for JSON output,
      * without suppressions. Configure Hush to run after this task is complete, so it can analyze vulnerabilities
@@ -70,7 +77,7 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
                         Arrays.asList("checkstyle", "detekt", "detektPlugins",
                             "pmd", "spotbugs", "spotbugsPlugins", "spotbugsSlf4j"))
                     dependencyCheckExtension.suppressionFile = null
-                    dependencyCheckExtension.outputDirectory = "${project.buildDir}/reports/hush/report.json"
+                    dependencyCheckExtension.outputDirectory = reportFilepath
                     dependencyCheckExtension.showSummary = false
                 }
 
@@ -103,11 +110,11 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
      * Get the suppressions as per dependencyCheckAnalyze task's expectations
      */
     override fun getSuppressions(): List<HushSuppression>? {
-        if (!File("./dependency_suppression.xml").exists()) {
+        if (!File(suppressionFilepath).exists()) {
             return null
         }
 
-        val xmlContents = readFileDirectlyAsText("${project.projectDir}/dependency_suppression.xml")
+        val xmlContents = readFileDirectlyAsText(suppressionFilepath)
         val jaxbContext = JAXBContext.newInstance(DependencyCheckScanSuppressions::class.java)
         val unmarshaller = jaxbContext.createUnmarshaller()
         val dependencyCheckSuppressions: DependencyCheckScanSuppressions
@@ -155,12 +162,12 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
      * Write the suggested suppressions to dependency_suppression.xml, which dependencyCheckAnalyze expects
      */
     override fun writeSuggestedSuppressions(suppressions: String) {
-        File("./dependency_suppression.xml").writeText(suppressions)
+        File(suppressionFilepath).writeText(suppressions)
     }
 
     private fun getReport(): DependencyCheckScanReport? {
         return try {
-            Gson().fromJson(readFileDirectlyAsText("${project.buildDir}/reports/hush/report.json"), DependencyCheckScanReport::class.java)
+            Gson().fromJson(readFileDirectlyAsText(reportFilepath), DependencyCheckScanReport::class.java)
         } catch (ignored: FileNotFoundException) {
             null
         }
