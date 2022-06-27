@@ -38,7 +38,7 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
     /**
      * Resource directory paths used for dependency analysis. Create, Read, Write.
      */
-    private var reportFilepath: String = "${project.projectDir}/reports/hush/report.json"
+    private var reportFilepath: String = "${project.buildDir}/reports/hush/report.json"
     private var suppressionFilepath: String = "${project.projectDir}/dependency_suppression.xml"
 
     /**
