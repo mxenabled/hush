@@ -68,7 +68,7 @@ class DependencyCheckDriver(private val project: Project) : HushDriver(project) 
                 .doFirst {
                     val dependencyCheckExtension = project.extensions.getByName("dependencyCheck") as DependencyCheckExtension
 
-                    dependencyCheckExtension.data.directory = "${project.projectDir}/.dependency-check-data"
+                    dependencyCheckExtension.data.directory = "${project.rootDir}/.dependency-check-data"
                     dependencyCheckExtension.cveValidForHours = 24
                     dependencyCheckExtension.failBuildOnCVSS = 11F
                     dependencyCheckExtension.format = ReportGenerator.Format.JSON
