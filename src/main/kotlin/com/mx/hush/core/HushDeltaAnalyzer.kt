@@ -53,7 +53,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
             throw HushValidationViolation(red("Vulnerabilities detected. Please see report for details."))
         }
 
-        if (failOnUnneeded && neededSuppressions.isNotEmpty()) {
+        if (failOnUnneeded && unneededSuppressions.isNotEmpty()) {
             throw HushValidationViolation(red("Unneeded suppressions detected. Please see report for details."))
         }
     }
