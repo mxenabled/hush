@@ -16,21 +16,54 @@
 package com.mx.hush
 
 import com.mx.hush.core.HushEngine
-import com.mx.hush.core.drivers.DependencyCheckDriver
+import com.mx.hush.core.drivers.DependencyCheckVulnerabilityScanDriver
+import com.mx.hush.core.exceptions.GitlabConfigurationViolation
 import com.mx.hush.core.exceptions.HushValidationViolation
 import com.mx.hush.core.models.red
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
 
-class HushPlugin : Plugin<Project> {
+
+class HushPlugin() : Plugin<Project> {
     override fun apply(project: Project) {
-        val dependencyCheckDriver = DependencyCheckDriver(project)
+        val dependencyCheckDriver = DependencyCheckVulnerabilityScanDriver(project)
         val hushEngine = HushEngine(project, dependencyCheckDriver)
 
         project.tasks.register("hushReport") { task ->
+            task.description = "Check dependencies and output a report."
             task.doLast {
                 hushEngine.analyze()
             }
         }
+
+        project.tasks.register("hushGitlabToken") { task ->
+            task.description = "Set a local Gitlab token, for use in Hush, to avoid storing in a Git repository."
+
+            val tokenFile = File("${System.getProperty("user.home")}/hush/.gitlab-token")
+
+            task.doFirst {
+                File("${System.getProperty("user.home")}/hush").mkdirs()
+                tokenFile.createNewFile()
+            }
+
+            task.doLast {
+                if (hushEngine.getGitlabUrl().isBlank()) {
+                    println(red("Please configure a Gitlab URL."))
+                    throw GitlabConfigurationViolation("No Gitlab URL configured.")
+                }
+
+                println("Please visit ${hushEngine.getGitlabTokenUrl()}, add a token, and paste it below:")
+                val token = readLine()
+
+                if (token.isNullOrBlank()) {
+                    throw HushValidationViolation("Invalid token entered. Exiting.")
+                }
+
+                tokenFile.writeText(token)
+            }
+        }
+
+
     }
 }
