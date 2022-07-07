@@ -15,14 +15,15 @@
  */
 package com.mx.hush.core
 
-import com.mx.hush.HushExtension
-import com.mx.hush.core.drivers.HushDriver
+import com.mx.hush.HushExtension.Companion.hush
+import com.mx.hush.core.drivers.HushVulnerabilityScanDriver
 import com.mx.hush.core.models.HushSuppression
 import com.mx.hush.core.models.HushVulnerability
 import com.mx.hush.core.models.green
+import com.mx.hush.core.models.red
 import org.gradle.api.Project
 
-class HushEngine(private val project: Project, private val driver: HushDriver) {
+class HushEngine(private val project: Project, private val scanDriver: HushVulnerabilityScanDriver) {
     private val configParameters = hashMapOf(
         // Output unneeded suppressions
         "outputUnneeded" to true,
@@ -32,9 +33,12 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
         "outputSuggested" to true,
         // Write the suggested suppressions to the suppression file
         "writeSuggested" to false,
+        // Use the Gitlab configuration
+        "gitlab" to false,
     )
 
-    private var extension: HushExtension = project.extensions.create("hush", HushExtension::class.java)
+    private var extension = project.hush()
+    private var gitlabConfiguration = extension.gitlabConfiguration
 
     init {
         project.afterEvaluate {
@@ -45,7 +49,8 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
     }
 
     fun analyze() {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), driver)
+        extension.gitlabConfiguration.validateConfiguration()
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
 
         if (getConfigParameter("writeSuggested")) {
             analyzer.writeSuggestedSuppressions()
@@ -58,23 +63,37 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
         analyzer.passOrFail(getConfigParameter("failOnUnneeded"))
     }
 
+    fun getGitlabTokenUrl(): String {
+        return "${getGitlabUrl()}/-/profile/personal_access_tokens"
+    }
+
+    fun getGitlabUrl(): String {
+        return extension.gitlabConfiguration.url
+    }
+
     private fun setupProject() {
-        driver.setupProject()
+        scanDriver.setupProject()
     }
 
     private fun getVulnerabilities(): HashMap<String, HushVulnerability> {
-        return driver.getVulnerabilities()
+        return scanDriver.getVulnerabilities()
     }
 
     private fun getSuppressions(): List<HushSuppression> {
-        return driver.getSuppressions()!!
+        return scanDriver.getSuppressions()!!
     }
 
     private fun initializeConfigParameters() {
+        initalizeBaseConfigParameters()
+        initalizeGitlabConfigParameters()
+    }
+
+    private fun initalizeBaseConfigParameters() {
         configParameters["outputUnneeded"] = extension.outputUnneeded
         configParameters["failOnUnneeded"] = extension.failOnUnneeded
         configParameters["outputSuggested"] = extension.outputSuggested
         configParameters["writeSuggested"] = extension.writeSuggested
+        configParameters["gitlab"] = extension.gitlabConfiguration.enabled
 
         for (configItem in configParameters.keys) {
             for (parameter in project.properties) {
@@ -93,6 +112,43 @@ class HushEngine(private val project: Project, private val driver: HushDriver) {
                 }
             }
         }
+    }
+
+    private fun initalizeGitlabConfigParameters() {
+        gitlabConfiguration = extension.gitlabConfiguration
+
+        for (parameter in project.properties) {
+            val key = parameter.key.toLowerCase()
+
+            if (key.contains(".")) {
+                val keys = key.split(".")
+
+                if (keys[0] == "gitlabconfiguration") {
+                    when (keys[1]) {
+                        "url" -> {
+                            extension.gitlabConfiguration.url = parameter.value.toString()
+                            println("Gitlab host set to ${parameter.value.toString()} via parameter")
+                        }
+
+                        "token" -> {
+                            extension.gitlabConfiguration.token = parameter.value.toString()
+                            println("Gitlab token set via parameter")
+                        }
+
+                        "populatenotesonmatch" -> {
+                            extension.gitlabConfiguration.populateNotesOnMatch = parameter.value.toString().toBoolean()
+                            println("Gitlab populateNotesOnMatch set to ${parameter.value.toString().toBoolean()} via parameter")
+                        }
+
+                        else -> {
+                            println(red("Unknown Gitlab configuration property '${keys[1]}'"))
+                        }
+                    }
+                }
+            }
+        }
+
+        extension.gitlabConfiguration.enabled = configParameters["gitlab"] == true
     }
 
     private fun getConfigParameter(parameter: String): Boolean {

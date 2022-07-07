@@ -15,13 +15,16 @@
  */
 package com.mx.hush.core
 
-import com.mx.hush.core.drivers.HushDriver
+import com.mx.hush.GitlabConfiguration
+import com.mx.hush.core.drivers.GitlabIssueSearchDriver
+import com.mx.hush.core.drivers.HushVulnerabilityScanDriver
 import com.mx.hush.core.exceptions.HushValidationViolation
 import com.mx.hush.core.models.*
 
-class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnerability>, private var suppressions: List<HushSuppression>, private val driver: HushDriver) {
+class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnerability>, private var suppressions: List<HushSuppression>, private val scanDriver: HushVulnerabilityScanDriver, private val gitlabConfig: GitlabConfiguration) {
     private var neededSuppressions = mutableListOf<HushSuppression>()
     private var unneededSuppressions = mutableListOf<HushSuppression>()
+    private var searchDriver = GitlabIssueSearchDriver(gitlabConfig)
 
     init {
         populateNeededSuppressions()
@@ -56,6 +59,8 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         if (failOnUnneeded && unneededSuppressions.isNotEmpty()) {
             throw HushValidationViolation(red("Unneeded suppressions detected. Please see report for details."))
         }
+
+        println(green("Project passed validation."))
     }
 
     /**
@@ -101,11 +106,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         if (!isSuppressionFileValid() && outputSuggested) {
             println(cyan("Suggested suppressions:\n"))
             println(getSuggestedSuppressionText())
-
-            return
         }
-
-        println(green("Project passed validation."))
     }
 
     /**
@@ -114,7 +115,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
     fun writeSuggestedSuppressions() {
         val suggested = getSuggestedSuppressionText()
 
-        driver.writeSuggestedSuppressions(suggested)
+        scanDriver.writeSuggestedSuppressions(suggested)
     }
 
     private fun isSuppressionFileValid(): Boolean {
@@ -125,8 +126,14 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         for (vulnerability in vulnerabilities) {
             val suppression = suppressions.find { vulnerability.value.cve == it.cve }
 
-            if (suppression == null) {
-                val neededSuppression = HushSuppression(vulnerability.value.cve, "Hush generated suppression.")
+            if (suppression?.notes == null || suppression.notes.isEmpty()) {
+                var defaultNote = "Hush generated suppression."
+
+                if (gitlabConfig.enabled && gitlabConfig.populateNotesOnMatch) {
+                    defaultNote = searchDriver.findIssueUrl(vulnerability.value.cve)
+                }
+
+                val neededSuppression = HushSuppression(vulnerability.value.cve, defaultNote)
                 neededSuppression.description = vulnerability.value.description
                 neededSuppression.referenceUrl = vulnerability.value.referenceUrl
 
@@ -162,7 +169,15 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
                     val existingSuppression = suppressions.find { suppression -> suppression.cve == vulnerability.key }
 
                     if (existingSuppression?.notes != null) {
-                        notes = existingSuppression.notes.toString()
+                        notes = existingSuppression.notes
+                    }
+                }
+
+                if (neededSuppressions.isNotEmpty()) {
+                    val neededSuppression = neededSuppressions.find { suppresion -> suppresion.cve == vulnerability.key }
+
+                    if (neededSuppression?.notes != null) {
+                        notes = neededSuppression.notes
                     }
                 }
 
@@ -172,6 +187,6 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
             }
         }
 
-        return driver.getSuggestedSuppressionText(suggested)
+        return scanDriver.getSuggestedSuppressionText(suggested)
     }
 }
