@@ -20,6 +20,13 @@ Report.
    - `failOnUnneeded` (**enabled** by default): Throw if there are unnecessary suppressions in the suppression file.
    - `outputSuggested` (**enabled** by default): Output the suggested suppression file contents.
    - `writeSuggested` (**disabled** by default): Write the suggested suppressions directly to the suppression file.
+   - `gitlab` (**disabled** by default -- parameter only): Enable the Gitlab issue searching feature.
+   - `gitlabConfiguration`:
+     - `enabled`: Whether the Gitlab configuration is enabled.
+     - `url`: The base URL of your Gitlab instance.
+     - `token`: A valid token for interacting with your Gitlab API.
+     - `populateNotesOnMatch`: Add a matching Gitlab issue URL to the notes of suppressions.
+     - `duplicateStrategy`: Either `oldest` or `newest`. If more than one issue is found matching a CVE, which one to use.
 
 You may prepend `no` to any of the above flags, and the feature will be disabled (such as `noOutputUnneeded`).
 
@@ -54,6 +61,13 @@ hush {
    failOnUnneeded = true
    outputSuggested = true
    writeSuggested = false
+   gitlabConfiguration {
+    enabled = false
+    url = ""
+    token = ""
+    populateNotesOnMatch = true
+    duplicateStrategy = "oldest"
+  }
 }
 ```
 
