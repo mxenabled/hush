@@ -15,9 +15,10 @@
  */
 package com.mx.hush.core.drivers
 
-import org.gradle.api.Project
+import com.mx.hush.core.models.HushSuppression
 
 abstract class HushIssueSearchDriver() {
     abstract fun findIssueUrl(cve: String): String
     abstract fun isValidNote(note: String): Boolean
+    abstract fun validateNotes(suppressions: List<HushSuppression>)
 }
