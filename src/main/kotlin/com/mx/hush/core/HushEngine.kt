@@ -140,6 +140,12 @@ class HushEngine(private val project: Project, private val scanDriver: HushVulne
                             println("Gitlab populateNotesOnMatch set to ${parameter.value.toString().toBoolean()} via parameter")
                         }
 
+                        "duplicatestrategy" -> {
+                            val strategy = if (parameter.value.toString() == "oldest") "oldest" else "newest"
+                            extension.gitlabConfiguration.duplicateStrategy = strategy
+                            println("Gitlab duplicateStrategy set to $strategy via parameter")
+                        }
+
                         else -> {
                             println(red("Unknown Gitlab configuration property '${keys[1]}'"))
                         }

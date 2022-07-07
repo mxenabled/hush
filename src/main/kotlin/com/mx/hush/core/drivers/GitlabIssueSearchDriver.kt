@@ -33,6 +33,10 @@ class GitlabIssueSearchDriver(private val gitlabConfiguration: GitlabConfigurati
 
         val issues = result.component1() ?: return urlFallbackMessage
 
+        if (gitlabConfiguration.duplicateStrategy != "oldest") {
+            return issues.first().webUrl
+        }
+
         return issues.last().webUrl
     }
 

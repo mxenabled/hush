@@ -47,6 +47,7 @@ open class GitlabConfiguration {
     var url: String = ""
     var token: String = ""
     var populateNotesOnMatch: Boolean = true
+    var duplicateStrategy: String = "oldest"
 
     fun validateConfiguration() {
         if (!enabled) {
