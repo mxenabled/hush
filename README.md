@@ -77,3 +77,15 @@ Subtasks use their original names. You may run them per usual. For example:
 
    - `./gradlew dependencyCheck`
    - `./gradlew dependencyCheckAnalyze`
+
+### Local development workflow with Gitlab tokens
+
+`./gradlew hushGitlabToken` will enable you to store a token locally, so you do not need to add a token to your `build.gradle`.
+
+First, configure your Gitlab URL. Then, run the task (`./gradlew hushGitlabToken`). You will be given a URL to go to (but you can always just navigate to your profile in Gitlab) and generate a token. It is highly recommended that the token you generate has **read-only access**, for security purposes. Hush does not currently have any need for write permissions at all.
+
+When you run this task and input your token, a file will be created in `<user home>/hush` called `.gitlab-token`. This file will act as a fallback for scenarios that the token is not available via configuration or parameters. This allows an organization to avoid committing tokens to source control.
+
+#### Notes regarding overrides
+
+If you use the local development token strategy, and later configure a token (use supply a token via command line), it will be overridden. The token file is a fallback which is only used if a token is not configured. Please keep this in mind.
