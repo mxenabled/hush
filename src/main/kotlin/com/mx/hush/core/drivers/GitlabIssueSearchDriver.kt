@@ -21,7 +21,7 @@ import com.mx.hush.GitlabConfiguration
 import com.mx.hush.core.models.gitlab.GitlabIssue
 
 class GitlabIssueSearchDriver(private val gitlabConfiguration: GitlabConfiguration) : HushIssueSearchDriver() {
-    private var urlFallbackMessage: String = "No Gitlab issue found. Please create and issue and update this note."
+    private var urlFallbackMessage: String = "No Gitlab issue found. Please create an issue and update this note."
 
     override fun findIssueUrl(cve: String): String {
         val (_, _, result) = "${gitlabConfiguration.url}/api/v4/issues"
