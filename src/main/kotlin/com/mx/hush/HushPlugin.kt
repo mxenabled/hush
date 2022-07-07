@@ -17,7 +17,9 @@ package com.mx.hush
 
 import com.mx.hush.core.HushEngine
 import com.mx.hush.core.drivers.DependencyCheckVulnerabilityScanDriver
+import com.mx.hush.core.exceptions.GitlabConfigurationViolation
 import com.mx.hush.core.exceptions.HushValidationViolation
+import com.mx.hush.core.models.red
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import java.io.File
@@ -46,6 +48,11 @@ class HushPlugin() : Plugin<Project> {
             }
 
             task.doLast {
+                if (hushEngine.getGitlabUrl().isBlank()) {
+                    println(red("Please configure a Gitlab URL."))
+                    throw GitlabConfigurationViolation("No Gitlab URL configured.")
+                }
+
                 println("Please visit ${hushEngine.getGitlabTokenUrl()}, add a token, and paste it below:")
                 val token = readLine()
 
