@@ -92,7 +92,7 @@ open class GitlabConfiguration {
         }
 
         if (token.isEmpty()) {
-            throw GitlabConfigurationViolation("No Gitlab token defined. Please configure it as an environment variable, run the task with the gitlabConfiguration.token parameter, or run ./gradlew hushConfigureGitlab.")
+            throw GitlabConfigurationViolation("No Gitlab token defined. Please configure it as an environment variable, run the task with the gitlab-token parameter, or run ./gradlew hushConfigureGitlab.")
         }
     }
 }
