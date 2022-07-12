@@ -146,7 +146,7 @@ open class ReportTask : DefaultTask() {
     @TaskAction
     fun report() {
         handleParameters()
-        hushEngine.analyze()
+        hushEngine.validateAndReport()
     }
 
     fun setupProject() {

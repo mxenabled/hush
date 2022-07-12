@@ -18,6 +18,7 @@ package com.mx.hush
 import com.mx.hush.HushExtension.Companion.hush
 import com.mx.hush.core.tasks.ConfigureGitlabTask
 import com.mx.hush.core.tasks.ReportTask
+import com.mx.hush.core.tasks.ValidatePipelineTask
 import com.mx.hush.core.tasks.WriteSuggestedTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -27,10 +28,9 @@ class HushPlugin() : Plugin<Project> {
     override fun apply(project: Project) {
         project.hush()
 
-        project.tasks.register("hushReport", ReportTask::class.java)
-        project.tasks.register("hushWriteSuppressions", WriteSuggestedTask::class.java)
         project.tasks.register("hushConfigureGitlab", ConfigureGitlabTask::class.java)
-
-        project.tasks.named("hushReport", ReportTask::class.java).orNull?.setupProject()
+        project.tasks.register("hushWriteSuppressions", WriteSuggestedTask::class.java)
+        project.tasks.register("hushReport", ReportTask::class.java).orNull?.setupProject()
+        project.tasks.register("hushValidatePipeline", ValidatePipelineTask::class.java).orNull?.setupProject()
     }
 }

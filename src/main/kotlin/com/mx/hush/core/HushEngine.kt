@@ -25,7 +25,7 @@ import org.gradle.api.Project
 class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScanDriver) {
     private var extension = project.getHush()
 
-    fun analyze() {
+    fun validateAndReport() {
         extension.gitlabConfiguration.validateConfiguration()
         val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
 
@@ -38,6 +38,34 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
 
         analyzer.printReport(extension.outputUnneeded, extension.outputSuggested)
         analyzer.passOrFail(extension.failOnUnneeded)
+    }
+
+    fun validate(forceAll: Boolean) {
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
+
+        if (forceAll) {
+            analyzer.passOrFail(true)
+            return
+        }
+
+        analyzer.passOrFail(extension.failOnUnneeded)
+    }
+
+    fun validatePipeline() {
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
+
+        analyzer.passOrFailPipeline(true)
+    }
+
+    fun report(forceAll: Boolean) {
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
+
+        if (forceAll) {
+            analyzer.printReport(true, true)
+            return
+        }
+
+        analyzer.printReport(extension.outputUnneeded, extension.outputSuggested)
     }
 
     fun writeSuggestedSuppressions() {

@@ -63,6 +63,14 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         println(green("Project passed validation."))
     }
 
+    fun passOrFailPipeline(failOnUnneeded: Boolean) {
+        try {
+            passOrFail(failOnUnneeded)
+        } catch (_: HushValidationViolation) {
+            throw HushValidationViolation(red("Project failed validation. Please run hushReport locally for details."))
+        }
+    }
+
     /**
      * Print report based on validation
      * Will print non-suppressed vulnerabilities
