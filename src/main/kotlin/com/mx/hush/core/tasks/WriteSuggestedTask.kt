@@ -85,7 +85,7 @@ open class WriteSuggestedTask : DefaultTask() {
     )
     @get:Input
     var gitlabDuplicateStrategy: String = extension.gitlabConfiguration.duplicateStrategy
-    @OptionValues
+    @OptionValues("gitlab-duplicate-strategy")
     fun getDuplicateStrategies(): List<String> {
         return listOf("oldest", "newest")
     }

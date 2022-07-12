@@ -66,7 +66,7 @@ open class ConfigureGitlabTask : DefaultTask() {
     )
     @get:Input
     var duplicateStrategy: String = ""
-    @OptionValues
+    @OptionValues("duplicate-strategy")
     fun getDuplicateStrategies(): List<String> {
         return listOf("oldest", "newest")
     }
