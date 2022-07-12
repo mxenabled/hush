@@ -24,6 +24,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
+import org.gradle.api.tasks.options.OptionValues
 import java.io.File
 
 open class WriteSuggestedTask : DefaultTask() {
@@ -84,6 +85,10 @@ open class WriteSuggestedTask : DefaultTask() {
     )
     @get:Input
     var gitlabDuplicateStrategy: String = extension.gitlabConfiguration.duplicateStrategy
+    @OptionValues
+    fun getDuplicateStrategies(): List<String> {
+        return listOf("oldest", "newest")
+    }
 
     @TaskAction
     fun writeSuggested() {
