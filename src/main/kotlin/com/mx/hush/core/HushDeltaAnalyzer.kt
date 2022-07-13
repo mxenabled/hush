@@ -24,11 +24,15 @@ import com.mx.hush.core.models.*
 class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnerability>, private var suppressions: List<HushSuppression>, private val scanDriver: HushVulnerabilityScanDriver, private val gitlabConfig: GitlabConfiguration) {
     private var neededSuppressions = mutableListOf<HushSuppression>()
     private var unneededSuppressions = mutableListOf<HushSuppression>()
+    private var invalidNotes = listOf<HushSuppression>()
     private var searchDriver = GitlabIssueSearchDriver(gitlabConfig)
+
+    private val defaultNote = "Hush generated suppression. Please update this note before committing."
 
     init {
         populateNeededSuppressions()
         populateUnneededSuppressions()
+        populateInvalidNotes()
     }
 
     /**
@@ -47,7 +51,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
      * Will throw if non-suppressed vulnerabilities are found.
      * MAY throw if unnecessary suppressions are found (as per run parameter failOnUnneeded)
      */
-    fun passOrFail(failOnUnneeded: Boolean) {
+    fun passOrFail(failOnUnneeded: Boolean, validateNotes: Boolean) {
         if (failOnUnneeded && neededSuppressions.isNotEmpty() && unneededSuppressions.isNotEmpty()) {
             throw HushValidationViolation(red("Vulnerabilities and unneeded suppressions detected. Please see report for details."))
         }
@@ -60,12 +64,16 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
             throw HushValidationViolation(red("Unneeded suppressions detected. Please see report for details."))
         }
 
+        if (validateNotes && invalidNotes.isNotEmpty()) {
+            throw HushValidationViolation(red("Invalid notes detected. Please see report for details."))
+        }
+
         println(green("Project passed validation."))
     }
 
-    fun passOrFailPipeline(failOnUnneeded: Boolean) {
+    fun passOrFailPipeline(failOnUnneeded: Boolean, validateNotes: Boolean) {
         try {
-            passOrFail(failOnUnneeded)
+            passOrFail(failOnUnneeded, validateNotes)
         } catch (_: HushValidationViolation) {
             throw HushValidationViolation(red("Project failed validation. Please run hushReport locally for details."))
         }
@@ -76,7 +84,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
      * Will print non-suppressed vulnerabilities
      * MAY print unnecessary suppressions (as per run parameter outputUnneeded)
      */
-    fun printReport(outputUnneeded: Boolean, outputSuggested: Boolean) {
+    fun printReport(outputUnneeded: Boolean, outputSuggested: Boolean, validateNotes: Boolean) {
         if (neededSuppressions.isNotEmpty()) {
             val vulnVerbiage = if (neededSuppressions.size > 1) "vulnerabilities" else "vulnerability"
 
@@ -111,6 +119,12 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
             println("\n")
         }
 
+        if (invalidNotes.isNotEmpty() && validateNotes) {
+            val supVerbiage = if (invalidNotes.size > 1) "notes" else "note"
+
+            println("${yellow(invalidNotes.size.toString())} ${red("invalid suppression $supVerbiage found! Notes must be a valid issue URL.")}")
+        }
+
         if (!isSuppressionFileValid() && outputSuggested) {
             println(cyan("Suggested suppressions:\n"))
             println(getSuggestedSuppressionText())
@@ -135,7 +149,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
             val suppression = suppressions.find { vulnerability.value.cve == it.cve }
 
             if (suppression?.notes == null || suppression.notes.isEmpty()) {
-                var defaultNote = "Hush generated suppression."
+                var defaultNote = this.defaultNote
 
                 if (gitlabConfig.enabled && gitlabConfig.populateNotesOnMatch) {
                     defaultNote = searchDriver.findIssueUrl(vulnerability.value.cve)
@@ -166,12 +180,16 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         }
     }
 
+    private fun populateInvalidNotes() {
+        invalidNotes = scanDriver.getInvalidNotes(suppressions)
+    }
+
     private fun getSuggestedSuppressionText(): String {
         val suggested = mutableListOf<HushSuppression>()
 
         if (vulnerabilities.isNotEmpty()) {
             for (vulnerability in vulnerabilities) {
-                var notes = "Hush generated suppression."
+                var notes = defaultNote
 
                 if (suppressions.isNotEmpty()) {
                     val existingSuppression = suppressions.find { suppression -> suppression.cve == vulnerability.key }

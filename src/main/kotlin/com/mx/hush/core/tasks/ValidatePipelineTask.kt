@@ -16,6 +16,7 @@ open class ValidatePipelineTask : DefaultTask() {
 
     @TaskAction
     fun report() {
+        hushEngine.report(true)
         hushEngine.validatePipeline()
     }
 

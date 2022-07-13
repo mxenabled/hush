@@ -91,6 +91,20 @@ open class ReportTask : DefaultTask() {
     var noWriteSuggested: Boolean = false
 
     @set:Option(
+        option = "validate-notes",
+        description = "Validate notes with rudimentary URL validation, ensuring it is at least a URL."
+    )
+    @get:Input
+    var validateNotes: Boolean = extension.validateNotes
+
+    @set:Option(
+        option = "no-validate-notes",
+        description = "Do not validate notes with rudimentary URL validation."
+    )
+    @get:Input
+    var noValidateNotes: Boolean = false
+
+    @set:Option(
         option = "gitlab-enabled",
         description = "Enable the Gitlab feature."
     )
@@ -158,6 +172,7 @@ open class ReportTask : DefaultTask() {
         extension.failOnUnneeded = (failOnUnneeded && !noFailOnUnneeded)
         extension.outputSuggested = (outputSuggested && !noOutputSuggested)
         extension.writeSuggested = (writeSuggested && !noWriteSuggested)
+        extension.validateNotes = (validateNotes && !noValidateNotes)
         extension.gitlabConfiguration.enabled = (gitlabEnabled && !gitlabDisabled)
         extension.gitlabConfiguration.url = gitlabUrl
         extension.gitlabConfiguration.token = gitlabToken

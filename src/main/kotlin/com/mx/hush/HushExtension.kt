@@ -25,6 +25,7 @@ open class HushExtension {
     var failOnUnneeded: Boolean = true
     var outputSuggested: Boolean = true
     var writeSuggested: Boolean = false
+    var validateNotes: Boolean = true
     var gitlabConfiguration: GitlabConfiguration = GitlabConfiguration()
 
     init {

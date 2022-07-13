@@ -36,36 +36,36 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
             println(green("Suppression file written."))
         }
 
-        analyzer.printReport(extension.outputUnneeded, extension.outputSuggested)
-        analyzer.passOrFail(extension.failOnUnneeded)
+        analyzer.printReport(extension.outputUnneeded, extension.outputSuggested, extension.validateNotes)
+        analyzer.passOrFail(extension.failOnUnneeded, extension.validateNotes)
     }
 
     fun validate(forceAll: Boolean) {
         val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
 
         if (forceAll) {
-            analyzer.passOrFail(true)
+            analyzer.passOrFail(true, true)
             return
         }
 
-        analyzer.passOrFail(extension.failOnUnneeded)
+        analyzer.passOrFail(extension.failOnUnneeded, extension.validateNotes)
     }
 
     fun validatePipeline() {
         val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
 
-        analyzer.passOrFailPipeline(true)
+        analyzer.passOrFailPipeline(true, true)
     }
 
     fun report(forceAll: Boolean) {
         val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
 
         if (forceAll) {
-            analyzer.printReport(true, true)
+            analyzer.printReport(true, false, true)
             return
         }
 
-        analyzer.printReport(extension.outputUnneeded, extension.outputSuggested)
+        analyzer.printReport(extension.outputUnneeded, extension.outputSuggested, extension.validateNotes)
     }
 
     fun writeSuggestedSuppressions() {

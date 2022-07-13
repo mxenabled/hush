@@ -15,6 +15,8 @@ previously ran `hushReport`.
   `<user home>/.config/hush/hush-config.json` to prevent committing tokens to source control. Alternatively, this file can be 
 manually created / edited with these properties: `enabled`, `url`, `token`, `populateNotesOnMatch`, and 
 `duplicateStrategy`.
+- `./gradlew hushValidatePipeline`: Perform validation without consideration for configuration values. Fails when 
+unneeded suppressions or invalid notes are found. Outputs a verbose report without suggestions.
 
 ## Arguments / Config
 
@@ -26,6 +28,7 @@ manually created / edited with these properties: `enabled`, `url`, `token`, `pop
 - `--output-suggested` or `--no-output-suggested`: Enable/disable reporting suggested suppression file contents.
 - `--write-suggested` or `--no-write-suggested`: Enable/disable writing suggested suppression file contents to the 
 suppression file.
+- `--validate-notes` or `--no-validate-notes`: Enable/disable rudimentary URL validation for notes within suppressions.
 - `--gitlab-enabled` or `--gitlab-disabled`: Enable/disable the Gitlab issue searching feature.
 - `--gitlab-url=XXXX`: Set the Gitlab base URL.
 - `--gitlab-token=XXXX`: Set the Gitlab API token.
@@ -59,6 +62,7 @@ hush {
    failOnUnneeded = true
    outputSuggested = true
    writeSuggested = false
+   validateNotes = true
 }
 ```
 
