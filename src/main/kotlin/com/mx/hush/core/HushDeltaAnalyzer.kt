@@ -75,7 +75,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         try {
             passOrFail(failOnUnneeded, validateNotes)
         } catch (_: HushValidationViolation) {
-            throw HushValidationViolation(red("Project failed validation. Please run hushReport locally for details."))
+            throw HushValidationViolation(red("Project failed validation."))
         }
     }
 
