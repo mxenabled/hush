@@ -18,7 +18,6 @@ package com.mx.hush.core.drivers
 import com.github.kittinunf.fuel.core.extensions.authentication
 import com.github.kittinunf.fuel.httpGet
 import com.mx.hush.GitlabConfiguration
-import com.mx.hush.core.models.HushSuppression
 import com.mx.hush.core.models.gitlab.GitlabIssue
 
 class GitlabIssueSearchDriver(private val gitlabConfiguration: GitlabConfiguration) : HushIssueSearchDriver() {
@@ -33,18 +32,14 @@ class GitlabIssueSearchDriver(private val gitlabConfiguration: GitlabConfigurati
 
         val issues = result.component1() ?: return urlFallbackMessage
 
+        if (issues.isEmpty()) {
+            return urlFallbackMessage
+        }
+
         if (gitlabConfiguration.duplicateStrategy != "oldest") {
             return issues.first().webUrl
         }
 
         return issues.last().webUrl
-    }
-
-    override fun isValidNote(note: String): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun validateNotes(suppressions: List<HushSuppression>) {
-        TODO("Not yet implemented")
     }
 }

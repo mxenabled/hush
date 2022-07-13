@@ -15,29 +15,63 @@
  */
 package com.mx.hush
 
+import com.google.gson.Gson
 import com.mx.hush.core.exceptions.GitlabConfigurationViolation
-import org.gradle.api.Action
 import org.gradle.api.Project
-import org.gradle.api.model.ObjectFactory
 import java.io.File
-import javax.inject.Inject
 
-open class HushExtension @Inject constructor(
-    objects: ObjectFactory,
-) {
+open class HushExtension {
     var outputUnneeded: Boolean = true
     var failOnUnneeded: Boolean = true
     var outputSuggested: Boolean = true
     var writeSuggested: Boolean = false
-    val gitlabConfiguration: GitlabConfiguration = objects.newInstance(GitlabConfiguration::class.java)
+    var validateNotes: Boolean = true
+    var gitlabConfiguration: GitlabConfiguration = GitlabConfiguration()
 
-    fun gitlabConfiguration(action: Action<GitlabConfiguration>) {
-        action.execute(gitlabConfiguration)
+    init {
+        val configFile = File(gitlabConfigPath + gitlabConfigFile)
+
+        if (configFile.exists()) {
+            val config: GitlabConfiguration = Gson().fromJson(
+                configFile.readText(),
+                GitlabConfiguration::class.java)
+
+            gitlabConfiguration = config
+        } else {
+            val environmentVars = System.getenv()
+
+            if (environmentVars["HUSH_GITLAB_ENABLED"]?.isNotBlank() == true) {
+                gitlabConfiguration.enabled = environmentVars["HUSH_GITLAB_ENABLED"].toBoolean()
+            }
+
+            if (environmentVars["HUSH_GITLAB_URL"]?.isNotBlank() == true) {
+                gitlabConfiguration.url = environmentVars["HUSH_GITLAB_URL"].toString()
+            }
+
+            if (environmentVars["HUSH_GITLAB_TOKEN"]?.isNotBlank() == true) {
+                gitlabConfiguration.token = environmentVars["HUSH_GITLAB_TOKEN"].toString()
+            }
+
+            if (environmentVars["HUSH_GITLAB_POPULATE_NOTES"]?.isNotBlank() == true) {
+                gitlabConfiguration.populateNotesOnMatch = environmentVars["HUSH_GITLAB_POPULATE_NOTES"].toBoolean()
+            }
+
+            if (environmentVars["HUSH_GITLAB_DUPLICATE_STRATEGY"]?.isNotBlank() == true) {
+                gitlabConfiguration.duplicateStrategy = environmentVars["HUSH_GITLAB_DUPLICATE_STRATEGY"].toString()
+            }
+        }
     }
 
     companion object {
+        val gitlabConfigPath = "${System.getProperty("user.home")}/.config/hush/"
+        val gitlabConfigFile = "hush-config.json"
+
         fun Project.hush(): HushExtension {
             return extensions.create("hush", HushExtension::class.java)
+        }
+
+        fun Project.getHush(): HushExtension {
+            return extensions.getByType(HushExtension::class.java)
         }
     }
 }
@@ -59,15 +93,7 @@ open class GitlabConfiguration {
         }
 
         if (token.isEmpty()) {
-            if (!localTokenExists()) {
-                throw GitlabConfigurationViolation("No Gitlab token defined. Please add a token to your configuration, run the task with the gitlabConfiguration.token parameter, or run ./gradlew hushGitlabToken to set your token.")
-            }
-
-            token = File("${System.getProperty("user.home")}/hush/.gitlab-token").readText()
+            throw GitlabConfigurationViolation("No Gitlab token defined. Please configure it as an environment variable, run the task with the gitlab-token parameter, or run ./gradlew hushConfigureGitlab.")
         }
-    }
-
-    private fun localTokenExists(): Boolean {
-        return File("${System.getProperty("user.home")}/hush/.gitlab-token").exists()
     }
 }

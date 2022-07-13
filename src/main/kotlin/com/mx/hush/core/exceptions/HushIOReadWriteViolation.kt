@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mx.hush.core.drivers
+package com.mx.hush.core.exceptions
 
-abstract class HushIssueSearchDriver() {
-    abstract fun findIssueUrl(cve: String): String
-}
+class HushIOReadWriteViolation(message: String) : RuntimeException(message)
