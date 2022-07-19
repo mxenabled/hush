@@ -15,13 +15,14 @@
  */
 package com.mx.hush.core
 
-import com.mx.hush.GitlabConfiguration
+import com.mx.hush.HushExtension
 import com.mx.hush.core.drivers.GitlabIssueSearchDriver
 import com.mx.hush.core.drivers.HushVulnerabilityScanDriver
 import com.mx.hush.core.exceptions.HushValidationViolation
 import com.mx.hush.core.models.*
 
-class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnerability>, private var suppressions: List<HushSuppression>, private val scanDriver: HushVulnerabilityScanDriver, private val gitlabConfig: GitlabConfiguration) {
+class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnerability>, private var suppressions: List<HushSuppression>, private val scanDriver: HushVulnerabilityScanDriver, private val extension: HushExtension) {
+    private var gitlabConfig = extension.gitlabConfiguration
     private var neededSuppressions = mutableListOf<HushSuppression>()
     private var unneededSuppressions = mutableListOf<HushSuppression>()
     private var invalidNotes = listOf<HushSuppression>()
@@ -189,10 +190,10 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
     }
 
     private fun populateInvalidNotes() {
-        invalidNotes = if (gitlabConfig.enabled && gitlabConfig.validateNotes) {
-            searchDriver.getInvalidNotes(suppressions)
-        } else {
-            scanDriver.getInvalidNotes(suppressions)
+        if (gitlabConfig.enabled && gitlabConfig.validateNotes) {
+            invalidNotes = searchDriver.getInvalidNotes(suppressions)
+        } else if (extension.validateNotes) {
+            invalidNotes = scanDriver.getInvalidNotes(suppressions)
         }
     }
 

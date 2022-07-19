@@ -27,7 +27,7 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
 
     fun validateAndReport() {
         extension.gitlabConfiguration.validateConfiguration()
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
 
         if (extension.writeSuggested) {
             analyzer.writeSuggestedSuppressions()
@@ -41,7 +41,7 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
     }
 
     fun validate(forceAll: Boolean) {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
 
         if (forceAll) {
             analyzer.passOrFail(true, true)
@@ -52,13 +52,13 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
     }
 
     fun validatePipeline() {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
 
         analyzer.passOrFailPipeline(true, true)
     }
 
     fun report(forceAll: Boolean) {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
 
         if (forceAll) {
             analyzer.printReport(true, false, true)
@@ -69,7 +69,7 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
     }
 
     fun writeSuggestedSuppressions() {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension.gitlabConfiguration)
+        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
 
         analyzer.writeSuggestedSuppressions()
     }
