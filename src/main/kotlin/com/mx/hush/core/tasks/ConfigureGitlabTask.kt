@@ -71,6 +71,20 @@ open class ConfigureGitlabTask : DefaultTask() {
         return listOf("oldest", "newest")
     }
 
+    @set:Option(
+        option = "validate-notes",
+        description = "Validate notes via the Gitlab API, ensuring they are valid issue URLs where the CVE is noted."
+    )
+    @get:Input
+    var validateNotes: Boolean = false
+
+    @set:Option(
+        option = "no-validate-notes",
+        description = "Do not validate notes via the Gitlab API, ensuring they are valid issue URLs where the CVE is noted."
+    )
+    @get:Input
+    var noValidateNotes: Boolean = false
+
     @TaskAction
     fun configureGitlab() {
         val configFile = File(HushExtension.configPath + HushExtension.configFileName)
@@ -98,12 +112,18 @@ open class ConfigureGitlabTask : DefaultTask() {
             duplicateStrategy = if (readLine().toString().toLowerCase() == "oldest") "oldest" else "newest"
         }
 
+        if (!validateNotes && !noValidateNotes) {
+            println("Would you like to validate suppression notes as Gitlab issue URLs? (y/n)")
+            validateNotes = readLine().toString().toLowerCase() == "y"
+        }
+
         val gitlabConfig = GitlabConfiguration()
         gitlabConfig.enabled = true
         gitlabConfig.url = url
         gitlabConfig.token = token
         gitlabConfig.populateNotesOnMatch = (populateNotes && !noPopulateNotes)
         gitlabConfig.duplicateStrategy = duplicateStrategy
+        gitlabConfig.validateNotes = (validateNotes && !noValidateNotes)
 
         configFile.writeText(Gson().toJson(gitlabConfig, GitlabConfiguration::class.java))
 
