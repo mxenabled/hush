@@ -73,9 +73,9 @@ open class ConfigureGitlabTask : DefaultTask() {
 
     @TaskAction
     fun configureGitlab() {
-        val configFile = File(HushExtension.gitlabConfigPath + HushExtension.gitlabConfigFile)
+        val configFile = File(HushExtension.configPath + HushExtension.configFileName)
 
-        File(HushExtension.gitlabConfigPath).mkdirs()
+        File(HushExtension.configPath).mkdirs()
         configFile.createNewFile()
 
         if (url.isEmpty()) {
@@ -107,6 +107,6 @@ open class ConfigureGitlabTask : DefaultTask() {
 
         configFile.writeText(Gson().toJson(gitlabConfig, GitlabConfiguration::class.java))
 
-        println(green("Configuration written to ${HushExtension.gitlabConfigPath}${HushExtension.gitlabConfigFile}"))
+        println(green("Configuration written to ${HushExtension.configPath}${HushExtension.configFileName}"))
     }
 }

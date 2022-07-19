@@ -15,6 +15,26 @@
  */
 package com.mx.hush.core.drivers
 
+import com.mx.hush.core.models.HushSuppression
+
 abstract class HushIssueSearchDriver() {
+    /**
+     * Search via API request for a CVE
+     */
     abstract fun findIssueUrl(cve: String): String
+
+    /**
+     * Performs deep validation on a URL, ensuring it is a valid issue with the CVE in the title or body
+     */
+    abstract fun isValidUrlDeep(url: String, cve: String): Boolean
+
+    /**
+     * Performs rudimentary validation on a URL, ensuring it is in fact a URL
+     */
+    abstract fun isValidUrlSimple(url: String): Boolean
+
+    /**
+     * Returns a list of suppressions with invalid notes
+     */
+    abstract fun getInvalidNotes(suppressions: List<HushSuppression>): List<HushSuppression>
 }

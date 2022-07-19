@@ -29,7 +29,7 @@ class HushPlugin() : Plugin<Project> {
         project.hush()
 
         project.tasks.register("hushConfigureGitlab", ConfigureGitlabTask::class.java)
-        project.tasks.register("hushWriteSuppressions", WriteSuggestedTask::class.java)
+        project.tasks.register("hushWriteSuppressions", WriteSuggestedTask::class.java).orNull?.setupProject()
         project.tasks.register("hushReport", ReportTask::class.java).orNull?.setupProject()
         project.tasks.register("hushValidatePipeline", ValidatePipelineTask::class.java).orNull?.setupProject()
     }
