@@ -13,7 +13,7 @@ output a report.
 previously ran `hushReport`.
 - `./gradlew hushConfigureGitlab`: Step-by-step configuration of Gitlab, which will be stored in
   `<user home>/.config/hush/hush-config.json` to prevent committing tokens to source control. Alternatively, this file can be 
-manually created / edited with these properties: `enabled`, `url`, `token`, `populateNotesOnMatch`, and 
+manually created / edited with these properties: `enabled`, `url`, `token`, `populateNotesOnMatch`, `validateNotes`, and 
 `duplicateStrategy`.
 - `./gradlew hushValidatePipeline`: Perform validation without consideration for configuration values. Fails when 
 unneeded suppressions or invalid notes are found. Outputs a verbose report without suggestions.
@@ -33,6 +33,8 @@ suppression file.
 - `--gitlab-url=XXXX`: Set the Gitlab base URL.
 - `--gitlab-token=XXXX`: Set the Gitlab API token.
 - `--gitlab-populate-notes` or `--no-gitlab-populate-notes`: Enable/disable populating notes with Gitlab issue URLs.
+- `--gitlab-validate-notes` or `--no-gitlab-validate-notes`: Enable/disable validating notes as Gitlab issue URLs, with
+the CVE in the issue.
 - `--gitlab-duplicate-strategy=[oldest, newest]`: When more than one issue is found, which issue to use (valid options: 
 `oldest` or `newest`).
 
@@ -41,6 +43,7 @@ suppression file.
 - `--url=XXXX`: Set the Gitlab base URL.
 - `--token=XXXX`: Set the Gitlab API token.
 - `--populate-notes` or `--no-populate-notes`: Enable/disable populating notes with Gitlab issue URLs.
+- `--validate-notes` or `--no-validate-notes`: Enable/disable validating notes as Gitlab issues.
 - `--duplicate-strategy=[oldest, newest]`: When more than one issue is found, which issue to use (valid options: 
 `oldest` or `newest`).
 
@@ -62,7 +65,7 @@ hush {
    failOnUnneeded = true
    outputSuggested = true
    writeSuggested = false
-   validateNotes = true
+   validateNotes = true // Rudimentary URL validation, NOT integration-based validation (like Gitlab)
 }
 ```
 
@@ -74,9 +77,9 @@ You will be given a URL to go to (but you can always just navigate to your profi
 is highly recommended that the token you generate has **read-only access**, for security purposes. Hush does not 
 currently have any need for write permissions at all.
 
-When you run this task, a file will be created in `<user home>/.config/hush` called `hush-config.json`. This file will act as a 
-fallback for scenarios that the Gitlab configuration is not supplied via parameters. This allows an organization to 
-avoid committing tokens to source control.
+When you run this task, a file will be created in `<user home>/.config/hush` called `hush-config.json`. This file will 
+act as a fallback for scenarios that the Gitlab configuration is not supplied via parameters. This allows an 
+organization to avoid committing tokens to source control.
 
 ### Notes regarding overrides
 
@@ -88,11 +91,12 @@ always override the local configuration.
 You may also define environment variables for the Gitlab configuration:
 
 ```
-HUSH_GITLAB_ENABLED
-HUSH_GITLAB_URL
-HUSH_GITLAB_TOKEN
-HUSH_GITLAB_POPULATE_NOTES
-HUSH_GITLAB_DUPLICATE_STRATEGY
+HUSH_GITLAB_ENABLED=false
+HUSH_GITLAB_URL=""
+HUSH_GITLAB_TOKEN=""
+HUSH_GITLAB_POPULATE_NOTES=true
+HUSH_GITLAB_VALIDATE_NOTES=true
+HUSH_GITLAB_DUPLICATE_STRATEGY="oldest"
 ```
 
 Please note that a local configuration will be used when the file exists, and that command line parameters will always 

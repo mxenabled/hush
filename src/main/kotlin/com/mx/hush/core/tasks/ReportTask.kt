@@ -19,12 +19,9 @@ import com.mx.hush.HushExtension.Companion.getHush
 import com.mx.hush.core.HushEngine
 import com.mx.hush.core.drivers.DependencyCheckVulnerabilityScanDriver
 import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.options.Option
-import org.gradle.api.tasks.options.OptionValues
 
-open class ReportTask : DefaultTask() {
+open class ReportTask : DefaultTask(), GitlabFlags, CoreFlags {
     private val dependencyCheckDriver = DependencyCheckVulnerabilityScanDriver(project)
     private val hushEngine = HushEngine(project, dependencyCheckDriver)
     private val extension = project.getHush()
@@ -34,128 +31,26 @@ open class ReportTask : DefaultTask() {
         group = "Reporting"
     }
 
-    @set:Option(
-        option = "output-unneeded",
-        description = "Report suppressions found in the suppression file which are not needed."
-    )
-    @get:Input
-    var outputUnneeded: Boolean = extension.outputUnneeded
+    override var outputUnneeded: Boolean = extension.outputUnneeded
+    override var noOutputUnneeded: Boolean = false
+    override var failOnUnneeded: Boolean = extension.failOnUnneeded
+    override var noFailOnUnneeded: Boolean = false
+    override var outputSuggested: Boolean = extension.outputSuggested
+    override var noOutputSuggested: Boolean = false
+    override var writeSuggested: Boolean = extension.writeSuggested
+    override var noWriteSuggested: Boolean = false
+    override var validateNotes: Boolean = extension.validateNotes
+    override var noValidateNotes: Boolean = false
 
-    @set:Option(
-        option = "no-output-unneeded",
-        description = "Do not report suppressions found in the suppression file which are not needed."
-    )
-    @get:Input
-    var noOutputUnneeded: Boolean = false
-
-    @set:Option(
-        option = "fail-on-unneeded",
-        description = "Fail if suppressions are found in the suppression file which are not needed."
-    )
-    @get:Input
-    var failOnUnneeded: Boolean = extension.failOnUnneeded
-
-    @set:Option(
-        option = "no-fail-on-unneeded",
-        description = "Do not fail if suppressions are found in the suppression file which are not needed."
-    )
-    @get:Input
-    var noFailOnUnneeded: Boolean = false
-
-    @set:Option(
-        option = "output-suggested",
-        description = "Output suggested suppression file contents."
-    )
-    @get:Input
-    var outputSuggested: Boolean = extension.outputSuggested
-
-    @set:Option(
-        option = "no-output-suggested",
-        description = "Do not output suggested suppression file contents."
-    )
-    @get:Input
-    var noOutputSuggested: Boolean = false
-
-    @set:Option(
-        option = "write-suggested",
-        description = "Write suggested suppression file contents to the suppression file."
-    )
-    @get:Input
-    var writeSuggested: Boolean = extension.writeSuggested
-
-    @set:Option(
-        option = "no-write-suggested",
-        description = "Do not write suggested suppression file contents to the suppression file."
-    )
-    @get:Input
-    var noWriteSuggested: Boolean = false
-
-    @set:Option(
-        option = "validate-notes",
-        description = "Validate notes with rudimentary URL validation, ensuring it is at least a URL."
-    )
-    @get:Input
-    var validateNotes: Boolean = extension.validateNotes
-
-    @set:Option(
-        option = "no-validate-notes",
-        description = "Do not validate notes with rudimentary URL validation."
-    )
-    @get:Input
-    var noValidateNotes: Boolean = false
-
-    @set:Option(
-        option = "gitlab-enabled",
-        description = "Enable the Gitlab feature."
-    )
-    @get:Input
-    var gitlabEnabled: Boolean = extension.gitlabConfiguration.enabled
-
-    @set:Option(
-        option = "gitlab-disabled",
-        description = "Disable the Gitlab feature."
-    )
-    @get:Input
-    var gitlabDisabled: Boolean = false
-
-    @set:Option(
-        option = "gitlab-url",
-        description = "The base URL (https://mygitlab.mycompany.com) of your Gitlab instance."
-    )
-    @get:Input
-    var gitlabUrl: String = extension.gitlabConfiguration.url
-
-    @set:Option(
-        option = "gitlab-token",
-        description = "The token for making API requests to your Gitlab instance."
-    )
-    @get:Input
-    var gitlabToken: String = extension.gitlabConfiguration.token
-
-    @set:Option(
-        option = "gitlab-populate-notes",
-        description = "Populate notes in suggested suppressions with an issue URL from your Gitlab (when found)."
-    )
-    @get:Input
-    var gitlabPopulateNotes: Boolean = extension.gitlabConfiguration.populateNotesOnMatch
-
-    @set:Option(
-        option = "no-gitlab-populate-notes",
-        description = "Populate notes in suggested suppressions with an issue URL from your Gitlab (when found)."
-    )
-    @get:Input
-    var noGitlabPopulateNotes: Boolean = false
-
-    @set:Option(
-        option = "gitlab-duplicate-strategy",
-        description = "Which strategy to use when more than one issue is found in Gitlab matching the CVE (oldest/newest)"
-    )
-    @get:Input
-    var gitlabDuplicateStrategy: String = extension.gitlabConfiguration.duplicateStrategy
-    @OptionValues("gitlab-duplicate-strategy")
-    fun getDuplicateStrategies(): List<String> {
-        return listOf("oldest", "newest")
-    }
+    override var gitlabEnabled: Boolean = extension.gitlabConfiguration.enabled
+    override var gitlabDisabled: Boolean = false
+    override var gitlabUrl: String = extension.gitlabConfiguration.url
+    override var gitlabToken: String = extension.gitlabConfiguration.token
+    override var gitlabPopulateNotes: Boolean = extension.gitlabConfiguration.populateNotesOnMatch
+    override var noGitlabPopulateNotes: Boolean = false
+    override var gitlabValidateNotes: Boolean = extension.gitlabConfiguration.validateNotes
+    override var noGitlabValidateNotes: Boolean = false
+    override var gitlabDuplicateStrategy: String = extension.gitlabConfiguration.duplicateStrategy
 
     @TaskAction
     fun report() {
@@ -165,6 +60,12 @@ open class ReportTask : DefaultTask() {
 
     fun setupProject() {
         hushEngine.setupProject()
+
+        project.afterEvaluate {
+            project.tasks.named("hushReport")
+                .get()
+                .dependsOn(project.tasks.named("dependencyCheckAnalyze"))
+        }
     }
 
     private fun handleParameters() {
@@ -177,6 +78,7 @@ open class ReportTask : DefaultTask() {
         extension.gitlabConfiguration.url = gitlabUrl
         extension.gitlabConfiguration.token = gitlabToken
         extension.gitlabConfiguration.populateNotesOnMatch = (gitlabPopulateNotes && !noGitlabPopulateNotes)
+        extension.gitlabConfiguration.validateNotes = (gitlabValidateNotes && !noGitlabValidateNotes)
         extension.gitlabConfiguration.duplicateStrategy = gitlabDuplicateStrategy
     }
 }

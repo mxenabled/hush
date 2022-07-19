@@ -15,13 +15,14 @@
  */
 package com.mx.hush.core
 
-import com.mx.hush.GitlabConfiguration
+import com.mx.hush.HushExtension
 import com.mx.hush.core.drivers.GitlabIssueSearchDriver
 import com.mx.hush.core.drivers.HushVulnerabilityScanDriver
 import com.mx.hush.core.exceptions.HushValidationViolation
 import com.mx.hush.core.models.*
 
-class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnerability>, private var suppressions: List<HushSuppression>, private val scanDriver: HushVulnerabilityScanDriver, private val gitlabConfig: GitlabConfiguration) {
+class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnerability>, private var suppressions: List<HushSuppression>, private val scanDriver: HushVulnerabilityScanDriver, private val extension: HushExtension) {
+    private var gitlabConfig = extension.gitlabConfiguration
     private var neededSuppressions = mutableListOf<HushSuppression>()
     private var unneededSuppressions = mutableListOf<HushSuppression>()
     private var invalidNotes = listOf<HushSuppression>()
@@ -44,6 +45,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         this.suppressions = suppressions
         populateNeededSuppressions()
         populateUnneededSuppressions()
+        populateInvalidNotes()
     }
 
     /**
@@ -98,31 +100,19 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         }
 
         if (unneededSuppressions.isNotEmpty() && outputUnneeded) {
-            val multiWhitespace = Regex("\\s{2,}")
             val supVerbiage = if (unneededSuppressions.size > 1) "suppressions" else "suppression"
 
             println("${yellow(unneededSuppressions.size.toString())} ${red("unnecessary $supVerbiage found!")}")
 
-            for (suppression in unneededSuppressions) {
-                val notes = suppression.notes
-                    ?.replace("\n", "")
-                    ?.replace(multiWhitespace, " ")
-                    ?.trim()
-
-                if (notes != null) {
-                    println("   - ${suppression.cve} ($notes)")
-                } else {
-                    println("   - ${suppression.cve}")
-                }
-            }
-
-            println("\n")
+            printList(unneededSuppressions)
         }
 
         if (invalidNotes.isNotEmpty() && validateNotes) {
             val supVerbiage = if (invalidNotes.size > 1) "notes" else "note"
 
             println("${yellow(invalidNotes.size.toString())} ${red("invalid suppression $supVerbiage found! Notes must be a valid issue URL.")}")
+
+            printList(invalidNotes)
         }
 
         if (!isSuppressionFileValid() && outputSuggested) {
@@ -140,8 +130,27 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
         scanDriver.writeSuggestedSuppressions(suggested)
     }
 
+    private fun printList(list: List<HushSuppression>) {
+        val multiWhitespace = Regex("\\s{2,}")
+
+        for (suppression in list) {
+            val notes = suppression.notes
+                ?.replace("\n", "")
+                ?.replace(multiWhitespace, " ")
+                ?.trim()
+
+            if (notes != null) {
+                println("   - ${suppression.cve} ($notes)")
+            } else {
+                println("   - ${suppression.cve}")
+            }
+        }
+
+        println("\n")
+    }
+
     private fun isSuppressionFileValid(): Boolean {
-        return neededSuppressions.isEmpty() && unneededSuppressions.isEmpty()
+        return neededSuppressions.isEmpty() && unneededSuppressions.isEmpty() && invalidNotes.isEmpty()
     }
 
     private fun populateNeededSuppressions() {
@@ -181,7 +190,11 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
     }
 
     private fun populateInvalidNotes() {
-        invalidNotes = scanDriver.getInvalidNotes(suppressions)
+        if (gitlabConfig.enabled && gitlabConfig.validateNotes) {
+            invalidNotes = searchDriver.getInvalidNotes(suppressions)
+        } else if (extension.validateNotes) {
+            invalidNotes = scanDriver.getInvalidNotes(suppressions)
+        }
     }
 
     private fun getSuggestedSuppressionText(): String {

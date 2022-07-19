@@ -17,6 +17,9 @@ package com.mx.hush
 
 import com.google.gson.Gson
 import com.mx.hush.core.exceptions.GitlabConfigurationViolation
+import com.mx.hush.core.models.red
+import org.apache.commons.lang3.StringUtils
+import org.apache.commons.validator.routines.UrlValidator
 import org.gradle.api.Project
 import java.io.File
 
@@ -29,14 +32,18 @@ open class HushExtension {
     var gitlabConfiguration: GitlabConfiguration = GitlabConfiguration()
 
     init {
-        val configFile = File(gitlabConfigPath + gitlabConfigFile)
-
         if (configFile.exists()) {
             val config: GitlabConfiguration = Gson().fromJson(
                 configFile.readText(),
                 GitlabConfiguration::class.java)
 
-            gitlabConfiguration = config
+            config.url = StringUtils.removeEnd(config.url, "/")
+
+            if (!UrlValidator().isValid(config.url)) {
+                println(red("Invalid Gitlab URL ('${config.url}') defined. Gitlab search will not be used for CVEs."))
+            } else {
+                gitlabConfiguration = config
+            }
         } else {
             val environmentVars = System.getenv()
 
@@ -59,12 +66,17 @@ open class HushExtension {
             if (environmentVars["HUSH_GITLAB_DUPLICATE_STRATEGY"]?.isNotBlank() == true) {
                 gitlabConfiguration.duplicateStrategy = environmentVars["HUSH_GITLAB_DUPLICATE_STRATEGY"].toString()
             }
+
+            if (environmentVars["HUSH_GITLAB_VALIDATE_NOTES"]?.isNotBlank() == true) {
+                gitlabConfiguration.validateNotes = environmentVars["HUSH_GITLAB_VALIDATE_NOTES"].toBoolean()
+            }
         }
     }
 
     companion object {
-        val gitlabConfigPath = "${System.getProperty("user.home")}/.config/hush/"
-        val gitlabConfigFile = "hush-config.json"
+        val configPath = "${System.getProperty("user.home")}/.config/hush/"
+        const val configFileName = "hush-config.json"
+        val configFile = File(configPath + configFileName)
 
         fun Project.hush(): HushExtension {
             return extensions.create("hush", HushExtension::class.java)
@@ -82,6 +94,7 @@ open class GitlabConfiguration {
     var token: String = ""
     var populateNotesOnMatch: Boolean = true
     var duplicateStrategy: String = "oldest"
+    var validateNotes: Boolean = true
 
     fun validateConfiguration() {
         if (!enabled) {

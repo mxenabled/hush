@@ -20,6 +20,7 @@ import com.mx.hush.core.HushEngine
 import com.mx.hush.core.drivers.DependencyCheckVulnerabilityScanDriver
 import com.mx.hush.core.exceptions.HushIOReadWriteViolation
 import com.mx.hush.core.models.red
+import com.mx.hush.core.models.yellow
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
@@ -27,74 +28,31 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.options.OptionValues
 import java.io.File
 
-open class WriteSuggestedTask : DefaultTask() {
+open class WriteSuggestedTask : DefaultTask(), GitlabFlags {
     private val dependencyCheckDriver = DependencyCheckVulnerabilityScanDriver(project)
     private val hushEngine = HushEngine(project, dependencyCheckDriver)
     private val extension = project.getHush()
 
     init {
-        description = "Write the suggested contents of the vulnerability suppression file. Requires previously running hushReport."
+        description = "Write the suggested contents of the vulnerability suppression file."
         group = "Reporting"
     }
 
-    @set:Option(
-        option = "gitlab-enabled",
-        description = "Enable the Gitlab feature."
-    )
-    @get:Input
-    var gitlabEnabled: Boolean = extension.gitlabConfiguration.enabled
-
-    @set:Option(
-        option = "gitlab-disabled",
-        description = "Disable the Gitlab feature."
-    )
-    @get:Input
-    var gitlabDisabled: Boolean = false
-
-    @set:Option(
-        option = "gitlab-url",
-        description = "The base URL (https://mygitlab.mycompany.com) of your Gitlab instance."
-    )
-    @get:Input
-    var gitlabUrl: String = extension.gitlabConfiguration.url
-
-    @set:Option(
-        option = "gitlab-token",
-        description = "The token for making API requests to your Gitlab instance."
-    )
-    @get:Input
-    var gitlabToken: String = extension.gitlabConfiguration.token
-
-    @set:Option(
-        option = "gitlab-populate-notes",
-        description = "Populate notes in suggested suppressions with an issue URL from your Gitlab (when found)."
-    )
-    @get:Input
-    var gitlabPopulateNotes: Boolean = extension.gitlabConfiguration.populateNotesOnMatch
-
-    @set:Option(
-        option = "no-gitlab-populate-notes",
-        description = "Populate notes in suggested suppressions with an issue URL from your Gitlab (when found)."
-    )
-    @get:Input
-    var noGitlabPopulateNotes: Boolean = false
-
-    @set:Option(
-        option = "gitlab-duplicate-strategy",
-        description = "Which strategy to use when more than one issue is found in Gitlab matching the CVE (oldest/newest)"
-    )
-    @get:Input
-    var gitlabDuplicateStrategy: String = extension.gitlabConfiguration.duplicateStrategy
-    @OptionValues("gitlab-duplicate-strategy")
-    fun getDuplicateStrategies(): List<String> {
-        return listOf("oldest", "newest")
-    }
+    override var gitlabEnabled: Boolean = extension.gitlabConfiguration.enabled
+    override var gitlabDisabled: Boolean = false
+    override var gitlabUrl: String = extension.gitlabConfiguration.url
+    override var gitlabToken: String = extension.gitlabConfiguration.token
+    override var gitlabPopulateNotes: Boolean = extension.gitlabConfiguration.populateNotesOnMatch
+    override var noGitlabPopulateNotes: Boolean = false
+    override var gitlabDuplicateStrategy: String = extension.gitlabConfiguration.duplicateStrategy
+    override var gitlabValidateNotes: Boolean = extension.gitlabConfiguration.validateNotes
+    override var noGitlabValidateNotes: Boolean = false
 
     @TaskAction
     fun writeSuggested() {
         if (!hushEngine.canWriteSuggestedSuppressions()) {
             if(!File(hushEngine.getReportFilePath()).canRead()) {
-                println(red("Could not read file at '${hushEngine.getReportFilePath()}'. Please make sure you run hushReport before attempting this task."))
+                println(red("Could not read file at '${hushEngine.getReportFilePath()}'."))
             }
 
             if(!File(hushEngine.getSuppressionFilePath()).canWrite()) {
@@ -106,6 +64,18 @@ open class WriteSuggestedTask : DefaultTask() {
 
         handleParameters()
         hushEngine.writeSuggestedSuppressions()
+    }
+
+    fun setupProject() {
+        if(!File(hushEngine.getReportFilePath()).canRead()) {
+            hushEngine.setupProject()
+
+            project.afterEvaluate {
+                project.tasks.named("hushWriteSuppressions")
+                    .get()
+                    .dependsOn(project.tasks.named("dependencyCheckAnalyze"))
+            }
+        }
     }
 
     private fun handleParameters() {
