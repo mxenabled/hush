@@ -18,6 +18,7 @@ package com.mx.hush.core.tasks
 import com.google.gson.Gson
 import com.mx.hush.GitlabConfiguration
 import com.mx.hush.HushExtension
+import com.mx.hush.core.helpers.InputPrompt
 import com.mx.hush.core.models.green
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
@@ -93,28 +94,40 @@ open class ConfigureGitlabTask : DefaultTask() {
         configFile.createNewFile()
 
         if (url.isEmpty()) {
-            println("Please enter your Gitlab base URL (ex. https://mygitlab.mydomain.com)")
-            url = readLine().toString()
+            url = InputPrompt("Please enter your Gitlab base URL (ex. https://mygitlab.mydomain.com):")
+                .setType(InputPrompt.PromptType.URL)
+                .prompt()
+                .getString()
         }
 
         if (token.isEmpty()) {
-            println("Please visit $url/-/profile/personal_access_tokens, add a token, and paste it below:")
-            token = readLine().toString()
+            token = InputPrompt("Please visit $url/-/profile/personal_access_tokens, add a token, and paste it below:")
+                .prompt()
+                .getString()
         }
 
         if (!populateNotes && !noPopulateNotes) {
-            println("Would you like to populate suppression notes with Gitlab issue URLs? (y/n)")
-            populateNotes = readLine().toString().toLowerCase() == "y"
+            populateNotes = InputPrompt("Would you like to populate suppression notes with Gitlab issue URLs?")
+                .setType(InputPrompt.PromptType.BOOLEAN)
+                .setDefault(true)
+                .prompt()
+                .getBoolean()
         }
 
         if (duplicateStrategy.isEmpty()) {
-            println("If duplicate issues are found, should Hush pick the oldest or newest issue? (oldest/newest)")
-            duplicateStrategy = if (readLine().toString().toLowerCase() == "oldest") "oldest" else "newest"
+            duplicateStrategy = InputPrompt("If duplicate issues are found, should Hush pick the oldest or newest issue?")
+                .setValidOptions(arrayOf("oldest", "newest"))
+                .setDefault("oldest")
+                .prompt()
+                .getString()
         }
 
         if (!validateNotes && !noValidateNotes) {
-            println("Would you like to validate suppression notes as Gitlab issue URLs? (y/n)")
-            validateNotes = readLine().toString().toLowerCase() == "y"
+            validateNotes = InputPrompt("Would you like to validate suppression notes as Gitlab issue URLs?")
+                .setType(InputPrompt.PromptType.BOOLEAN)
+                .setDefault(true)
+                .prompt()
+                .getBoolean()
         }
 
         val gitlabConfig = GitlabConfiguration()

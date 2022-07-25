@@ -16,8 +16,9 @@
 package com.mx.hush.core.drivers
 
 import com.mx.hush.core.models.HushSuppression
+import org.gradle.api.Project
 
-abstract class HushIssueSearchDriver() {
+abstract class HushIssueSearchDriver(project: Project) {
     /**
      * Search via API request for a CVE
      */

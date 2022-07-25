@@ -15,25 +15,35 @@
  */
 package com.mx.hush.core.drivers
 
+import com.github.kittinunf.fuel.core.Response
 import com.github.kittinunf.fuel.core.extensions.authentication
 import com.github.kittinunf.fuel.httpGet
-import com.mx.hush.GitlabConfiguration
+import com.mx.hush.HushExtension.Companion.getHush
+import com.mx.hush.core.exceptions.GitlabClientError
+import com.mx.hush.core.exceptions.GitlabConfigurationViolation
+import com.mx.hush.core.exceptions.GitlabServerError
 import com.mx.hush.core.models.HushSuppression
 import com.mx.hush.core.models.gitlab.GitlabIssue
+import com.mx.hush.core.models.red
 import org.apache.commons.validator.routines.UrlValidator
+import org.gradle.api.Project
 
-class GitlabIssueSearchDriver(private val gitlabConfiguration: GitlabConfiguration) : HushIssueSearchDriver() {
+class GitlabIssueSearchDriver(project: Project) : HushIssueSearchDriver(project) {
     private var urlFallbackMessage: String = "No Gitlab issue found. Please create an issue and update this note."
     private var invalidCveMessage: String = "Not a valid CVE"
     private var invalidUrlMessage: String = "Not a valid URL"
     private var invalidUrlDeepMessage: String = "CVE not found in Gitlab issue"
 
+    private val gitlabConfiguration = project.getHush().gitlabConfiguration
+
     override fun findIssueUrl(cve: String): String {
-        val (_, _, result) = "${gitlabConfiguration.url}/api/v4/issues"
+        val (_, response, result) = "${gitlabConfiguration.url}/api/v4/issues"
             .httpGet(listOf("search" to cve, "scope" to "all"))
             .authentication()
             .bearer(gitlabConfiguration.token)
             .responseObject(GitlabIssue.Deserializer())
+
+        validateResponse(response)
 
         val issues = result.component1() ?: return urlFallbackMessage
 
@@ -55,11 +65,13 @@ class GitlabIssueSearchDriver(private val gitlabConfiguration: GitlabConfigurati
         val pieces = url.split("/")
         val issueId = pieces[pieces.size - 1]
 
-        val (_, _, result) = "${gitlabConfiguration.url}/api/v4/issues"
+        val (_, response, result) = "${gitlabConfiguration.url}/api/v4/issues"
             .httpGet(listOf("search" to cve, "scope" to "all", "iids[]" to issueId))
             .authentication()
             .bearer(gitlabConfiguration.token)
             .responseObject(GitlabIssue.Deserializer())
+
+        validateResponse(response)
 
         val issues = result.component1() ?: return false
 
@@ -97,5 +109,23 @@ class GitlabIssueSearchDriver(private val gitlabConfiguration: GitlabConfigurati
         }
 
         return invalidNotes
+    }
+
+    private fun validateResponse(response: Response) {
+        if (response.statusCode in 200..299) {
+            return
+        }
+
+        if (response.statusCode == 401) {
+            throw GitlabConfigurationViolation(red("Gitlab configuration error: API responded with 'Unauthorized' status."))
+        }
+
+        if (response.statusCode in 400..499) {
+            throw GitlabClientError(red("Gitlab client error: ${response.statusCode} (${response.responseMessage})"))
+        }
+
+        if (response.statusCode in 500..599) {
+            throw GitlabServerError(red("Gitlab server error: ${response.statusCode} (${response.responseMessage})"))
+        }
     }
 }

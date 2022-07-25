@@ -17,20 +17,15 @@ package com.mx.hush.core.tasks
 
 import com.mx.hush.HushExtension.Companion.getHush
 import com.mx.hush.core.HushEngine
-import com.mx.hush.core.drivers.DependencyCheckVulnerabilityScanDriver
+import com.mx.hush.core.HushEngine.Companion.hushScanDriver
 import com.mx.hush.core.exceptions.HushIOReadWriteViolation
 import com.mx.hush.core.models.red
-import com.mx.hush.core.models.yellow
 import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.options.Option
-import org.gradle.api.tasks.options.OptionValues
 import java.io.File
 
 open class WriteSuggestedTask : DefaultTask(), GitlabFlags {
-    private val dependencyCheckDriver = DependencyCheckVulnerabilityScanDriver(project)
-    private val hushEngine = HushEngine(project, dependencyCheckDriver)
+    private val hushEngine = HushEngine(project)
     private val extension = project.getHush()
 
     init {
@@ -73,7 +68,7 @@ open class WriteSuggestedTask : DefaultTask(), GitlabFlags {
             project.afterEvaluate {
                 project.tasks.named("hushWriteSuppressions")
                     .get()
-                    .dependsOn(project.tasks.named("dependencyCheckAnalyze"))
+                    .dependsOn(project.tasks.named(project.hushScanDriver!!.getPrerequisiteTaskName()))
             }
         }
     }

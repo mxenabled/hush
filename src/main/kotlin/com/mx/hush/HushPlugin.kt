@@ -15,7 +15,11 @@
  */
 package com.mx.hush
 
-import com.mx.hush.HushExtension.Companion.hush
+import com.mx.hush.HushExtension.Companion.registerHush
+import com.mx.hush.core.HushEngine.Companion.hushScanDriver
+import com.mx.hush.core.HushEngine.Companion.hushSearchDriver
+import com.mx.hush.core.drivers.DependencyCheckVulnerabilityScanDriver
+import com.mx.hush.core.drivers.GitlabIssueSearchDriver
 import com.mx.hush.core.tasks.ConfigureGitlabTask
 import com.mx.hush.core.tasks.ReportTask
 import com.mx.hush.core.tasks.ValidatePipelineTask
@@ -26,11 +30,18 @@ import org.gradle.api.Project
 
 class HushPlugin() : Plugin<Project> {
     override fun apply(project: Project) {
-        project.hush()
+        // Register the Hush extension
+        project.registerHush()
 
+        // Register Hush drivers
+        project.hushScanDriver = DependencyCheckVulnerabilityScanDriver(project)
+        project.hushSearchDriver = GitlabIssueSearchDriver(project)
+
+        // Register Hush tasks
         project.tasks.register("hushConfigureGitlab", ConfigureGitlabTask::class.java)
-        project.tasks.register("hushWriteSuppressions", WriteSuggestedTask::class.java).orNull?.setupProject()
         project.tasks.register("hushReport", ReportTask::class.java).orNull?.setupProject()
         project.tasks.register("hushValidatePipeline", ValidatePipelineTask::class.java).orNull?.setupProject()
+        project.tasks.register("hushWriteSuggested", WriteSuggestedTask::class.java).orNull?.setupProject()
+        project.tasks.register("hushWriteSuppressions", WriteSuggestedTask::class.java).orNull?.setupProject()
     }
 }

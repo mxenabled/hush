@@ -15,18 +15,24 @@
  */
 package com.mx.hush.core
 
-import com.mx.hush.HushExtension
-import com.mx.hush.core.drivers.GitlabIssueSearchDriver
-import com.mx.hush.core.drivers.HushVulnerabilityScanDriver
+import com.mx.hush.HushExtension.Companion.getHush
+import com.mx.hush.core.HushEngine.Companion.hushScanDriver
+import com.mx.hush.core.HushEngine.Companion.hushSearchDriver
 import com.mx.hush.core.exceptions.HushValidationViolation
 import com.mx.hush.core.models.*
+import org.gradle.api.Project
 
-class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnerability>, private var suppressions: List<HushSuppression>, private val scanDriver: HushVulnerabilityScanDriver, private val extension: HushExtension) {
-    private var gitlabConfig = extension.gitlabConfiguration
+class HushDeltaAnalyzer(project: Project) {
+    private val extension = project.getHush()
+    private val gitlabConfig = extension.gitlabConfiguration
+    private val searchDriver = project.hushSearchDriver
+    private val scanDriver = project.hushScanDriver
+
+    private var suppressions: List<HushSuppression> = scanDriver!!.getSuppressions()
+    private var vulnerabilities: HashMap<String, HushVulnerability> = scanDriver!!.getVulnerabilities()
     private var neededSuppressions = mutableListOf<HushSuppression>()
     private var unneededSuppressions = mutableListOf<HushSuppression>()
     private var invalidNotes = listOf<HushSuppression>()
-    private var searchDriver = GitlabIssueSearchDriver(gitlabConfig)
 
     private val defaultNote = "Hush generated suppression. Please update this note before committing."
 
@@ -39,10 +45,10 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
     /**
      * Re-initialize. Used primarily when a re-evaluation of suppressions is necessary.
      */
-    fun reInitialize(suppressions: List<HushSuppression>) {
+    fun reInitialize() {
         neededSuppressions = mutableListOf()
         unneededSuppressions = mutableListOf()
-        this.suppressions = suppressions
+        this.suppressions = scanDriver!!.getSuppressions()
         populateNeededSuppressions()
         populateUnneededSuppressions()
         populateInvalidNotes()
@@ -127,7 +133,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
     fun writeSuggestedSuppressions() {
         val suggested = getSuggestedSuppressionText()
 
-        scanDriver.writeSuggestedSuppressions(suggested)
+        scanDriver!!.writeSuggestedSuppressions(suggested)
     }
 
     private fun printList(list: List<HushSuppression>) {
@@ -161,7 +167,7 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
                 var defaultNote = this.defaultNote
 
                 if (gitlabConfig.enabled && gitlabConfig.populateNotesOnMatch) {
-                    defaultNote = searchDriver.findIssueUrl(vulnerability.value.cve)
+                    defaultNote = searchDriver!!.findIssueUrl(vulnerability.value.cve)
                 }
 
                 val neededSuppression = HushSuppression(vulnerability.value.cve, defaultNote)
@@ -191,9 +197,9 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
 
     private fun populateInvalidNotes() {
         if (gitlabConfig.enabled && gitlabConfig.validateNotes) {
-            invalidNotes = searchDriver.getInvalidNotes(suppressions)
+            invalidNotes = searchDriver!!.getInvalidNotes(suppressions)
         } else if (extension.validateNotes) {
-            invalidNotes = scanDriver.getInvalidNotes(suppressions)
+            invalidNotes = scanDriver!!.getInvalidNotes(suppressions)
         }
     }
 
@@ -226,6 +232,6 @@ class HushDeltaAnalyzer(private val vulnerabilities: HashMap<String, HushVulnera
             }
         }
 
-        return scanDriver.getSuggestedSuppressionText(suggested)
+        return scanDriver!!.getSuggestedSuppressionText(suggested)
     }
 }
