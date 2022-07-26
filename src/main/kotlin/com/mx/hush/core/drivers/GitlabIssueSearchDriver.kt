@@ -15,18 +15,23 @@
  */
 package com.mx.hush.core.drivers
 
-import com.github.kittinunf.fuel.core.Response
+import com.github.kittinunf.fuel.core.*
 import com.github.kittinunf.fuel.core.extensions.authentication
+import com.github.kittinunf.fuel.core.requests.CancellableRequest
 import com.github.kittinunf.fuel.httpGet
+import com.github.kittinunf.result.Result
 import com.mx.hush.HushExtension.Companion.getHush
 import com.mx.hush.core.exceptions.GitlabClientError
 import com.mx.hush.core.exceptions.GitlabConfigurationViolation
 import com.mx.hush.core.exceptions.GitlabServerError
 import com.mx.hush.core.models.HushSuppression
+import com.mx.hush.core.models.HushVulnerability
 import com.mx.hush.core.models.gitlab.GitlabIssue
+import com.mx.hush.core.models.green
 import com.mx.hush.core.models.red
 import org.apache.commons.validator.routines.UrlValidator
 import org.gradle.api.Project
+import kotlinx.coroutines.*
 
 class GitlabIssueSearchDriver(project: Project) : HushIssueSearchDriver(project) {
     private var urlFallbackMessage: String = "No Gitlab issue found. Please create an issue and update this note."
@@ -51,11 +56,7 @@ class GitlabIssueSearchDriver(project: Project) : HushIssueSearchDriver(project)
             return urlFallbackMessage
         }
 
-        if (gitlabConfiguration.duplicateStrategy != "oldest") {
-            return issues.first().webUrl
-        }
-
-        return issues.last().webUrl
+        return if (gitlabConfiguration.duplicateStrategy != "oldest") issues.first().webUrl else issues.last().webUrl
     }
 
     /**
@@ -101,14 +102,106 @@ class GitlabIssueSearchDriver(project: Project) : HushIssueSearchDriver(project)
                 invalidNotes.add(HushSuppression(suppression.cve, "No note set. Please define a valid Gitlab issue URL."))
             } else if (suppression.cve == null) {
                 invalidNotes.add(HushSuppression("UNDEFINED", "${suppression.notes} - $invalidCveMessage"))
-            } else if (!isValidUrlSimple(suppression.notes)) {
+            } else if (!isValidUrlSimple(suppression.notes!!)) {
                 invalidNotes.add(HushSuppression(suppression.cve, "${suppression.notes} - $invalidUrlMessage"))
-            } else if (!isValidUrlDeep(suppression.notes, suppression.cve)) {
+            } else if (!isValidUrlDeep(suppression.notes!!, suppression.cve)) {
                 invalidNotes.add(HushSuppression(suppression.cve, "${suppression.notes} - $invalidUrlDeepMessage"))
             }
         }
 
         return invalidNotes
+    }
+
+    /**
+     * Get all invalid notes, asynchronously
+     */
+    override suspend fun getInvalidNotesAsync(suppressions: List<HushSuppression>): List<HushSuppression> = coroutineScope {
+        val invalidNotes = mutableListOf<HushSuppression>()
+
+        suppressions.forEach { suppression ->
+            launch {
+                val checkNote = async { addIfInvalid(suppression.notes, suppression.cve, invalidNotes) }
+                checkNote.await()?.join()
+            }
+        }
+
+        return@coroutineScope invalidNotes
+    }
+
+    /**
+     * Get a list of Gitlab Issue URLs from a list of vulnerabilities, asynchronously
+     */
+    override suspend fun getIssueUrlsAsync(vulnerabilities: List<HushVulnerability>): List<HushSuppression> = coroutineScope {
+        val searchedNotes = mutableListOf<HushSuppression>()
+
+        vulnerabilities.forEach { suppression ->
+            launch {
+                val getNote = async { addIssueUrlAsync(suppression.cve, searchedNotes) }
+                getNote.await().join()
+            }
+        }
+
+        return@coroutineScope searchedNotes
+    }
+
+    private fun addIfInvalid(url: String?, cve: String?, list: MutableList<HushSuppression>): CancellableRequest? {
+        if (url == null) {
+            list.add(HushSuppression(cve, "No note set. Please define a valid Gitlab issue URL."))
+            return null
+        }
+
+        if (cve == null) {
+            list.add(HushSuppression("UNDEFINED", "$url - $invalidCveMessage"))
+            return null
+        }
+
+        if (!isValidUrlSimple(url)) {
+            list.add(HushSuppression(cve, "$url - $invalidUrlMessage"))
+            return null
+        }
+
+        val pieces = url.split("/")
+        val issueId = pieces[pieces.size - 1]
+
+        return "${gitlabConfiguration.url}/api/v4/issues"
+            .httpGet(listOf("search" to cve, "scope" to "all", "iids[]" to issueId))
+            .authentication()
+            .bearer(gitlabConfiguration.token)
+            .responseObject(GitlabIssue.Deserializer()) { _, response, result ->
+                when (result) {
+                    is Result.Success -> {
+                        if(result.component1()?.size!! == 0) {
+                            list.add(HushSuppression(cve, "$url - $invalidUrlDeepMessage"))
+                        }
+                    }
+                    is Result.Failure -> {
+                        validateResponse(response)
+                    }
+                }
+            }
+    }
+
+    private fun addIssueUrlAsync(cve: String, list: MutableList<HushSuppression>): CancellableRequest {
+        return "${gitlabConfiguration.url}/api/v4/issues"
+            .httpGet(listOf("search" to cve, "scope" to "all"))
+            .authentication()
+            .bearer(gitlabConfiguration.token)
+            .responseObject(GitlabIssue.Deserializer()) { _, response, result ->
+                when (result) {
+                    is Result.Success -> {
+                        val issues = result.component1()
+
+                        if(issues?.isNotEmpty() == true) {
+                            list.add(HushSuppression(cve, if (gitlabConfiguration.duplicateStrategy != "oldest") issues.first().webUrl else issues.last().webUrl))
+                        } else {
+                            list.add(HushSuppression(cve, urlFallbackMessage))
+                        }
+                    }
+                    is Result.Failure -> {
+                        validateResponse(response)
+                    }
+                }
+            }
     }
 
     private fun validateResponse(response: Response) {

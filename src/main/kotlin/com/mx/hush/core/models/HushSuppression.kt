@@ -15,7 +15,7 @@
  */
 package com.mx.hush.core.models
 
-class HushSuppression(val cve: String?, val notes: String?) {
+class HushSuppression(val cve: String?, var notes: String?) {
     var description: String? = null
     var referenceUrl: String? = null
 }

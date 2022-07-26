@@ -20,9 +20,13 @@ import com.mx.hush.core.HushEngine.Companion.hushScanDriver
 import com.mx.hush.core.HushEngine.Companion.hushSearchDriver
 import com.mx.hush.core.exceptions.HushValidationViolation
 import com.mx.hush.core.models.*
+import com.mx.hush.core.models.gitlab.GitlabIssue
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.gradle.api.Project
 
-class HushDeltaAnalyzer(project: Project) {
+class HushDeltaAnalyzer(private val project: Project) {
     private val extension = project.getHush()
     private val gitlabConfig = extension.gitlabConfiguration
     private val searchDriver = project.hushSearchDriver
@@ -37,9 +41,9 @@ class HushDeltaAnalyzer(project: Project) {
     private val defaultNote = "Hush generated suppression. Please update this note before committing."
 
     init {
+        populateInvalidNotes()
         populateNeededSuppressions()
         populateUnneededSuppressions()
-        populateInvalidNotes()
     }
 
     /**
@@ -49,9 +53,9 @@ class HushDeltaAnalyzer(project: Project) {
         neededSuppressions = mutableListOf()
         unneededSuppressions = mutableListOf()
         this.suppressions = scanDriver!!.getSuppressions()
+        populateInvalidNotes()
         populateNeededSuppressions()
         populateUnneededSuppressions()
-        populateInvalidNotes()
     }
 
     /**
@@ -160,14 +164,17 @@ class HushDeltaAnalyzer(project: Project) {
     }
 
     private fun populateNeededSuppressions() {
+        val searchList: MutableList<HushVulnerability> = mutableListOf()
+        var issueUrls: List<HushSuppression>
+
         for (vulnerability in vulnerabilities) {
             val suppression = suppressions.find { vulnerability.value.cve == it.cve }
 
-            if (suppression?.notes == null || suppression.notes.isEmpty()) {
+            if (suppression?.notes == null || suppression.notes!!.isEmpty() || invalidNotes.find { it.cve == vulnerability.value.cve} != null) {
                 var defaultNote = this.defaultNote
 
                 if (gitlabConfig.enabled && gitlabConfig.populateNotesOnMatch) {
-                    defaultNote = searchDriver!!.findIssueUrl(vulnerability.value.cve)
+                    searchList.add(vulnerability.value)
                 }
 
                 val neededSuppression = HushSuppression(vulnerability.value.cve, defaultNote)
@@ -175,6 +182,16 @@ class HushDeltaAnalyzer(project: Project) {
                 neededSuppression.referenceUrl = vulnerability.value.referenceUrl
 
                 neededSuppressions.add(neededSuppression)
+            }
+        }
+
+        if (searchList.isNotEmpty()) {
+            runBlocking {
+                issueUrls = searchDriver!!.getIssueUrlsAsync(searchList)
+            }
+
+            issueUrls.forEach { searched ->
+                neededSuppressions.find { needed -> needed.cve == searched.cve }?.notes = searched.notes
             }
         }
     }
@@ -195,9 +212,9 @@ class HushDeltaAnalyzer(project: Project) {
         }
     }
 
-    private fun populateInvalidNotes() {
+    private fun populateInvalidNotes() = runBlocking {
         if (gitlabConfig.enabled && gitlabConfig.validateNotes) {
-            invalidNotes = searchDriver!!.getInvalidNotes(suppressions)
+            invalidNotes = searchDriver!!.getInvalidNotesAsync(suppressions)
         } else if (extension.validateNotes) {
             invalidNotes = scanDriver!!.getInvalidNotes(suppressions)
         }
@@ -214,7 +231,7 @@ class HushDeltaAnalyzer(project: Project) {
                     val existingSuppression = suppressions.find { suppression -> suppression.cve == vulnerability.key }
 
                     if (existingSuppression?.notes != null) {
-                        notes = existingSuppression.notes
+                        notes = existingSuppression.notes!!
                     }
                 }
 
@@ -222,7 +239,7 @@ class HushDeltaAnalyzer(project: Project) {
                     val neededSuppression = neededSuppressions.find { suppresion -> suppresion.cve == vulnerability.key }
 
                     if (neededSuppression?.notes != null) {
-                        notes = neededSuppression.notes
+                        notes = neededSuppression.notes!!
                     }
                 }
 
