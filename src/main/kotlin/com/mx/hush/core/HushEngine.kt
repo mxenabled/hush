@@ -20,6 +20,7 @@ import com.mx.hush.core.drivers.HushIssueSearchDriver
 import com.mx.hush.core.drivers.HushVulnerabilityScanDriver
 import com.mx.hush.core.exceptions.HushRuntimeError
 import com.mx.hush.core.models.green
+import com.mx.hush.core.tasks.HushTask
 import org.gradle.api.Project
 
 class HushEngine(private var project: Project) {
@@ -111,6 +112,28 @@ class HushEngine(private var project: Project) {
         var Project.hushSearchDriver: HushIssueSearchDriver?
             get() = searchDriver
             set(value) = value?.let { registerSearchDriver(it) }!!
+
+        fun Project.registerTaskWithSetup(taskName: String, clazz: Class<HushTask>) {
+            val newTask = project.tasks.register(taskName, clazz).get() as HushTask
+
+            newTask.setupProject()
+        }
+
+        fun Project.registerTaskWithAliases(taskNames: List<String>, clazz: Class<HushTask>) {
+            taskNames.forEach { name ->
+                project.tasks.register(name, clazz)
+            }
+        }
+
+        fun Project.registerTaskWithAliases(taskNames: List<String>, clazz: Class<HushTask>, withSetup: Boolean) {
+            if (withSetup) {
+                taskNames.forEach { name ->
+                    project.registerTaskWithSetup(name, clazz)
+                }
+            } else {
+                project.registerTaskWithAliases(taskNames, clazz)
+            }
+        }
 
         fun registerScanDriver(driver: HushVulnerabilityScanDriver) {
             scanDriver = driver

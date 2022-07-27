@@ -18,10 +18,9 @@ package com.mx.hush.core.tasks
 import com.mx.hush.HushExtension.Companion.getHush
 import com.mx.hush.core.HushEngine
 import com.mx.hush.core.HushEngine.Companion.hushScanDriver
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 
-open class ReportTask : DefaultTask(), GitlabFlags, CoreFlags {
+open class ReportTask : HushTask(), GitlabFlags, CoreFlags {
     private val hushEngine = HushEngine(project)
     private val extension = project.getHush()
 
@@ -57,7 +56,7 @@ open class ReportTask : DefaultTask(), GitlabFlags, CoreFlags {
         hushEngine.validateAndReport()
     }
 
-    fun setupProject() {
+    override fun setupProject() {
         hushEngine.setupProject()
 
         project.afterEvaluate {

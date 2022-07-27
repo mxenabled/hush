@@ -3,10 +3,9 @@ package com.mx.hush.core.tasks
 import com.mx.hush.HushExtension.Companion.getHush
 import com.mx.hush.core.HushEngine
 import com.mx.hush.core.HushEngine.Companion.hushScanDriver
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 
-open class ValidatePipelineTask : DefaultTask(), GitlabFlags {
+open class ValidatePipelineTask : HushTask(), GitlabFlags {
     private val hushEngine = HushEngine(project)
     private val extension = project.getHush()
 
@@ -32,7 +31,7 @@ open class ValidatePipelineTask : DefaultTask(), GitlabFlags {
         hushEngine.validatePipeline()
     }
 
-    fun setupProject() {
+    override fun setupProject() {
         hushEngine.setupProject()
 
         project.afterEvaluate {

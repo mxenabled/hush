@@ -20,11 +20,10 @@ import com.mx.hush.core.HushEngine
 import com.mx.hush.core.HushEngine.Companion.hushScanDriver
 import com.mx.hush.core.exceptions.HushIOReadWriteViolation
 import com.mx.hush.core.models.red
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import java.io.File
 
-open class WriteSuggestedTask : DefaultTask(), GitlabFlags {
+open class WriteSuggestedTask : HushTask(), GitlabFlags {
     private val hushEngine = HushEngine(project)
     private val extension = project.getHush()
 
@@ -61,7 +60,7 @@ open class WriteSuggestedTask : DefaultTask(), GitlabFlags {
         hushEngine.writeSuggestedSuppressions()
     }
 
-    fun setupProject() {
+    override fun setupProject() {
         if(!File(hushEngine.getReportFilePath()).canRead()) {
             hushEngine.setupProject()
 
