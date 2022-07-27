@@ -9,8 +9,7 @@ The following commands are available:
 
 - `./gradlew hushReport`: Scan for vulnerabilities in dependencies, unneeded suppressions in the suppression file, and 
 output a report.
-- `./gradlew hushWriteSuppressions`: Write the suggested suppressions to the suppression file. Requires having 
-previously ran `hushReport`.
+- `./gradlew hushWriteSuppressions`: Write the suggested suppressions to the suppression file.
 - `./gradlew hushConfigureGitlab`: Step-by-step configuration of Gitlab, which will be stored in
   `<user home>/.config/hush/hush-config.json` to prevent committing tokens to source control. Alternatively, this file can be 
 manually created / edited with these properties: `enabled`, `url`, `token`, `populateNotesOnMatch`, `validateNotes`, and 
@@ -55,6 +54,14 @@ the CVE in the issue.
 - `--gitlab-populate-notes` or `--no-gitlab-populate-notes`: Enable/disable populating notes with Gitlab issue URLs.
 - `--gitlab-duplicate-strategy=[oldest, newest]`: When more than one issue is found, which issue to use (valid options:
   `oldest` or `newest`).
+  
+#### hushValidatePipeline
+
+- `--gitlab-enabled` or `--gitlab-disabled`: Enable/disable the Gitlab issue searching feature.
+- `--gitlab-url=XXXX`: Set the Gitlab base URL.
+- `--gitlab-token=XXXX`: Set the Gitlab API token.
+- `--gitlab-validate-notes` or `--no-gitlab-validate-notes`: Enable/disable validating notes as Gitlab issue URLs, with
+the CVE in the issue.
 
 ### Config
 Available configuration properties and their default values:
