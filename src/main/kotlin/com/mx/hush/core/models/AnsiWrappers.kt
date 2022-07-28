@@ -42,3 +42,7 @@ fun green(text: String): String {
 fun yellow(text: String): String {
   return "$YELLOW$text$NO_COLOR"
 }
+
+fun none(text: String): String {
+  return "$NO_COLOR$text"
+}

@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mx.hush.core.models
+package com.mx.hush.core.exceptions
 
-class HushSuppression(val cve: String?, var notes: String?) {
-    var description: String? = null
-    var referenceUrl: String? = null
-}
+class HushRuntimeError(message: String) : RuntimeException(message)

@@ -17,13 +17,11 @@ package com.mx.hush.core.tasks
 
 import com.mx.hush.HushExtension.Companion.getHush
 import com.mx.hush.core.HushEngine
-import com.mx.hush.core.drivers.DependencyCheckVulnerabilityScanDriver
-import org.gradle.api.DefaultTask
+import com.mx.hush.core.HushEngine.Companion.hushScanDriver
 import org.gradle.api.tasks.TaskAction
 
-open class ReportTask : DefaultTask(), GitlabFlags, CoreFlags {
-    private val dependencyCheckDriver = DependencyCheckVulnerabilityScanDriver(project)
-    private val hushEngine = HushEngine(project, dependencyCheckDriver)
+open class ReportTask : HushTask(), GitlabFlags, CoreFlags {
+    private val hushEngine = HushEngine(project)
     private val extension = project.getHush()
 
     init {
@@ -58,13 +56,13 @@ open class ReportTask : DefaultTask(), GitlabFlags, CoreFlags {
         hushEngine.validateAndReport()
     }
 
-    fun setupProject() {
+    override fun setupProject() {
         hushEngine.setupProject()
 
         project.afterEvaluate {
             project.tasks.named("hushReport")
                 .get()
-                .dependsOn(project.tasks.named("dependencyCheckAnalyze"))
+                .dependsOn(project.tasks.named(project.hushScanDriver!!.getPrerequisiteTaskName()))
         }
     }
 

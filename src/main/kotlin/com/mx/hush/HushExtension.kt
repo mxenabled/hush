@@ -78,7 +78,7 @@ open class HushExtension {
         const val configFileName = "hush-config.json"
         val configFile = File(configPath + configFileName)
 
-        fun Project.hush(): HushExtension {
+        fun Project.registerHush(): HushExtension {
             return extensions.create("hush", HushExtension::class.java)
         }
 

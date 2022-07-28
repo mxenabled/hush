@@ -2,13 +2,11 @@ package com.mx.hush.core.tasks
 
 import com.mx.hush.HushExtension.Companion.getHush
 import com.mx.hush.core.HushEngine
-import com.mx.hush.core.drivers.DependencyCheckVulnerabilityScanDriver
-import org.gradle.api.DefaultTask
+import com.mx.hush.core.HushEngine.Companion.hushScanDriver
 import org.gradle.api.tasks.TaskAction
 
-open class ValidatePipelineTask : DefaultTask(), GitlabFlags {
-    private val dependencyCheckDriver = DependencyCheckVulnerabilityScanDriver(project)
-    private val hushEngine = HushEngine(project, dependencyCheckDriver)
+open class ValidatePipelineTask : HushTask(), GitlabFlags {
+    private val hushEngine = HushEngine(project)
     private val extension = project.getHush()
 
     override var gitlabEnabled: Boolean = extension.gitlabConfiguration.enabled
@@ -33,13 +31,13 @@ open class ValidatePipelineTask : DefaultTask(), GitlabFlags {
         hushEngine.validatePipeline()
     }
 
-    fun setupProject() {
+    override fun setupProject() {
         hushEngine.setupProject()
 
         project.afterEvaluate {
             project.tasks.named("hushValidatePipeline")
                 .get()
-                .dependsOn(project.tasks.named("dependencyCheckAnalyze"))
+                .dependsOn(project.tasks.named(project.hushScanDriver!!.getPrerequisiteTaskName()))
         }
     }
 

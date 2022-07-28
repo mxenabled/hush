@@ -16,22 +16,33 @@
 package com.mx.hush.core
 
 import com.mx.hush.HushExtension.Companion.getHush
+import com.mx.hush.core.drivers.HushIssueSearchDriver
 import com.mx.hush.core.drivers.HushVulnerabilityScanDriver
-import com.mx.hush.core.models.HushSuppression
-import com.mx.hush.core.models.HushVulnerability
+import com.mx.hush.core.exceptions.HushRuntimeError
 import com.mx.hush.core.models.green
+import com.mx.hush.core.tasks.HushTask
 import org.gradle.api.Project
 
-class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScanDriver) {
+class HushEngine(private var project: Project) {
     private var extension = project.getHush()
+
+    init {
+        if (scanDriver == null) {
+            throw HushRuntimeError("Scan driver not registered.")
+        }
+
+        if (searchDriver == null) {
+            throw HushRuntimeError("Search driver not registered.")
+        }
+    }
 
     fun validateAndReport() {
         extension.gitlabConfiguration.validateConfiguration()
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
+        val analyzer = HushDeltaAnalyzer(project)
 
         if (extension.writeSuggested) {
             analyzer.writeSuggestedSuppressions()
-            analyzer.reInitialize(getSuppressions())
+            analyzer.reInitialize()
 
             println(green("Suppression file written."))
         }
@@ -41,7 +52,7 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
     }
 
     fun validate(forceAll: Boolean) {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
+        val analyzer = HushDeltaAnalyzer(project)
 
         if (forceAll) {
             analyzer.passOrFail(true, true)
@@ -52,13 +63,13 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
     }
 
     fun validatePipeline() {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
+        val analyzer = HushDeltaAnalyzer(project)
 
         analyzer.passOrFailPipeline(true, true)
     }
 
     fun report(forceAll: Boolean) {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
+        val analyzer = HushDeltaAnalyzer(project)
 
         if (forceAll) {
             analyzer.printReport(true, false, true)
@@ -69,32 +80,67 @@ class HushEngine(project: Project, private val scanDriver: HushVulnerabilityScan
     }
 
     fun writeSuggestedSuppressions() {
-        val analyzer = HushDeltaAnalyzer(getVulnerabilities(), getSuppressions(), scanDriver, extension)
+        val analyzer = HushDeltaAnalyzer(project)
 
         analyzer.writeSuggestedSuppressions()
     }
 
     fun canWriteSuggestedSuppressions(): Boolean {
-        return scanDriver.canWriteSuggestedSuppressions()
+        return scanDriver!!.canWriteSuggestedSuppressions()
     }
 
     fun getReportFilePath(): String {
-        return scanDriver.getReportFilePath()
+        return scanDriver!!.getReportFilePath()
     }
 
     fun getSuppressionFilePath(): String {
-        return scanDriver.getSuppressionFilePath()
+        return scanDriver!!.getSuppressionFilePath()
     }
 
     fun setupProject() {
-        scanDriver.setupProject()
+        scanDriver!!.setupProject()
     }
 
-    private fun getVulnerabilities(): HashMap<String, HushVulnerability> {
-        return scanDriver.getVulnerabilities()
-    }
+    companion object {
+        var scanDriver: HushVulnerabilityScanDriver? = null
+        var searchDriver: HushIssueSearchDriver? = null
 
-    private fun getSuppressions(): List<HushSuppression> {
-        return scanDriver.getSuppressions()!!
+        var Project.hushScanDriver: HushVulnerabilityScanDriver?
+            get() = scanDriver
+            set(value) = value?.let { registerScanDriver(it) }!!
+
+        var Project.hushSearchDriver: HushIssueSearchDriver?
+            get() = searchDriver
+            set(value) = value?.let { registerSearchDriver(it) }!!
+
+        fun Project.registerTaskWithSetup(taskName: String, clazz: Class<HushTask>) {
+            val newTask = project.tasks.register(taskName, clazz).get() as HushTask
+
+            newTask.setupProject()
+        }
+
+        fun Project.registerTaskWithAliases(taskNames: List<String>, clazz: Class<HushTask>) {
+            taskNames.forEach { name ->
+                project.tasks.register(name, clazz)
+            }
+        }
+
+        fun Project.registerTaskWithAliases(taskNames: List<String>, clazz: Class<HushTask>, withSetup: Boolean) {
+            if (withSetup) {
+                taskNames.forEach { name ->
+                    project.registerTaskWithSetup(name, clazz)
+                }
+            } else {
+                project.registerTaskWithAliases(taskNames, clazz)
+            }
+        }
+
+        fun registerScanDriver(driver: HushVulnerabilityScanDriver) {
+            scanDriver = driver
+        }
+
+        fun registerSearchDriver(driver: HushIssueSearchDriver) {
+            searchDriver = driver
+        }
     }
 }
