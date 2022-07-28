@@ -33,7 +33,7 @@ class InputPrompt(private var prompt: String) {
     }
 
     fun getBoolean(): Boolean {
-        return inputText.toLowerCase() == "y"
+        return inputText.lowercase() == "y"
     }
 
     fun getString(): String {
@@ -90,7 +90,7 @@ class InputPrompt(private var prompt: String) {
             return false
         }
 
-        if (input.toLowerCase() != "y" && input.toLowerCase() != "n" && type == PromptType.BOOLEAN) {
+        if (input.lowercase() != "y" && input.lowercase() != "n" && type == PromptType.BOOLEAN) {
             return false
         }
 
@@ -98,7 +98,7 @@ class InputPrompt(private var prompt: String) {
             return false
         }
 
-        if (validOptions != null && !validOptions!!.contains(input.toLowerCase())) {
+        if (validOptions != null && !validOptions!!.contains(input.lowercase())) {
             return false
         }
 
