@@ -33,6 +33,7 @@ class InputPrompt(private var prompt: String) {
     }
 
     fun getBoolean(): Boolean {
+        @OptIn(ExperimentalStdlibApi::class)
         return inputText.lowercase() == "y"
     }
 
@@ -90,6 +91,7 @@ class InputPrompt(private var prompt: String) {
             return false
         }
 
+        @OptIn(ExperimentalStdlibApi::class)
         if (input.lowercase() != "y" && input.lowercase() != "n" && type == PromptType.BOOLEAN) {
             return false
         }
@@ -98,6 +100,7 @@ class InputPrompt(private var prompt: String) {
             return false
         }
 
+        @OptIn(ExperimentalStdlibApi::class)
         if (validOptions != null && !validOptions!!.contains(input.lowercase())) {
             return false
         }
