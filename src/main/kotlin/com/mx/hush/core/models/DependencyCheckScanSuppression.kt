@@ -15,7 +15,7 @@
  */
 package com.mx.hush.core.models
 
-import javax.xml.bind.annotation.*
+import jakarta.xml.bind.annotation.*
 
 @XmlRootElement(name = "suppress")
 @XmlAccessorType(XmlAccessType.FIELD)
