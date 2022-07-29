@@ -2,6 +2,19 @@
 
 A wrapper for dependency vulnerability plugins which makes it easier to manage suppression files.
 
+The paradigm with Hush is:
+
+- Search for CVEs
+- Throw if unsuppressed CVEs are found
+- Throw if unneeded suppressions exist in the suppression file
+- Throw if the `notes` within a suppression are not a valid URL (and with Gitlab searching enabled, if the URL is not a valid Gitlab issue)
+
+The idea is to ensure that: 
+
+- All CVEs are vetted and acknowledged
+- Outdated suppressions are pruned
+- Suppressions always link to an issue, highly encouraging collaboration (and discouraging adding a suppression without communication / collaboration)
+
 Jitpack: https://jitpack.io/p/mxenabled/hush
 
 ## Commands
