@@ -127,4 +127,4 @@ parameters must not be defined via command line.
 
 When the `--write-suggested` flag is passed to the `hushReport` task, the report will run _after_ the suppressions have 
 been written. Thus, it is important to ensure that you **do not** write suggested suppressions in a pipeline flow. If 
-you do, the pipeline will always pass, and you will never see vulnerabilities.
+you do, the pipeline will always pass, and you will never see vulnerabilities. This is one of the primary reasons that **`hushValidatePipeline` is recommended for pipeline validation**, rather than relying upon `hushReport` (which should be used for local development).
