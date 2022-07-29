@@ -11,7 +11,7 @@ The following commands are available:
 output a report.
 - `./gradlew hushWriteSuppressions`: Write the suggested suppressions to the suppression file.
 - `./gradlew hushConfigureGitlab`: Step-by-step configuration of Gitlab, which will be stored in
-  `<user home>/.config/hush/hush-config.json` to prevent committing tokens to source control. Alternatively, this file can be 
+  `~/.config/hush/hush-config.json` to prevent committing tokens to source control. Alternatively, this file can be 
 manually created / edited with these properties: `enabled`, `url`, `token`, `populateNotesOnMatch`, `validateNotes`, and 
 `duplicateStrategy`.
 - `./gradlew hushValidatePipeline`: Perform validation without consideration for configuration values. Fails when 
@@ -97,7 +97,7 @@ You will be given a URL to go to (but you can always just navigate to your profi
 is highly recommended that the token you generate has **read-only access**, for security purposes. Hush does not 
 currently have any need for write permissions at all.
 
-When you run this task, a file will be created in `<user home>/.config/hush` called `hush-config.json`. This file will 
+When you run this task, a file will be created in `~/.config/hush` called `hush-config.json`. This file will 
 act as a fallback for scenarios that the Gitlab configuration is not supplied via parameters. This allows an 
 organization to avoid committing tokens to source control.
 
