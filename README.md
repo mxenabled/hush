@@ -66,6 +66,7 @@ the CVE in the issue.
 ### Config
 Available configuration properties and their default values:
 
+#### build.gradle
 ```
 hush {
    outputUnneeded = true
@@ -73,6 +74,18 @@ hush {
    outputSuggested = true
    writeSuggested = false
    validateNotes = true // Rudimentary URL validation, NOT integration-based validation (like Gitlab)
+}
+```
+
+#### ~/.config/hush/hush-config.json
+```
+{
+   "enabled":false,
+   "url":"",
+   "token":"",
+   "populateNotesOnMatch":true,
+   "duplicateStrategy":"oldest",
+   "validateNotes":true
 }
 ```
 
