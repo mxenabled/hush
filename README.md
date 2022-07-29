@@ -1,5 +1,7 @@
 # Hush
 
+## Overview
+
 A wrapper for dependency vulnerability plugins which makes it easier to manage suppression files.
 
 The paradigm with Hush is:
